@@ -1,0 +1,12 @@
+# Security: Hide API keys and environment variables
+.env
+
+# Data: Hide raw downloaded PDFs to prevent repo bloat and copyright issues
+sources/
+
+# Research: Hide the AI-generated notes to keep research private before publication
+audits/
+
+# Python: Hide temporary cache files
+__pycache__/
+*.pyc
