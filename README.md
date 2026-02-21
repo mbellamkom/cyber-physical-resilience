@@ -20,7 +20,7 @@ To evaluate how different global frameworks (like NIST, ISO, and FEMA) handle th
 ---
 
 ## 2. The Automation Pipeline
-Reading hundreds of technical frameworks, academic papers, incident reports, and other relevant pieces of media manually is a massive bottleneck. To solve this, the project uses local Python scripts and AI to automate the discovery and note-taking process. The script was coded by Gemini and the agent was built in Google Antigravity. 
+Reading hundreds of technical frameworks, academic papers, incident reports, and other relevant pieces of media manually is a massive bottleneck. To solve this, the project uses local Python scripts and AI to automate the discovery and note-taking process. The script was coded by Gemini and tested by me. The AI agent was built in Google Antigravity with Gemini and Claude used to refine the prompt logic.  
 
 
 
