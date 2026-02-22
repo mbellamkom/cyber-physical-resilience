@@ -6,6 +6,18 @@ This document tracks changes made to the AI agent prompts, rules, and logic file
 
 ---
 
+## [2026-02-22] - Security Policy Creation
+
+## [2026-02-22] - Security Policy Creation
+
+**Files Added:** `../SECURITY.md` (Project Root)
+**Change Type:** Project & Agent Constraint
+**Reasoning:** 
+Based on researcher instruction to provide a project-wide security directive intended for anyone (including the AI agent) forking and using the repository, preventing the accidental commitment of sensitive files (e.g., `.env`) or large raw source data.
+
+**Modification:**
+Created `SECURITY.md` in the project root to establish strict constraints across the repository against staging and committing `.env` files, secrets, and raw source materials. The logic has been generalized so human users and automated agents share the same operational constraint.
+
 ## [2026-02-21] - Citation Rigor Update
 
 **File Modified:** `skills/auditor.md`

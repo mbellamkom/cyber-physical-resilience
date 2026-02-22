@@ -10,3 +10,11 @@ audits/
 # Python: Hide temporary cache files
 __pycache__/
 *.pyc
+
+# Database: Hide vector database files but keep structure
+.qdrant_db/*
+!.qdrant_db/README.md
+!.qdrant_db/.gitkeep
+
+# Internal: Hide internal project management files
+TODO.md
