@@ -38,7 +38,7 @@ The workflow is broken into three steps:
   > [*] Scouting: FEMA Lifelines Cyber Dependency
   > ```
   > **Discord Alert Example:**
-  > ![Scout Discord Alert](./discord_alert.png)
+  > ![Scout Discord Alert](./screenshots/discord_alert.png)
   
 * **Step 2: Technical Extraction (`librarian.py`)** A script that uses an AI model (Gemini) to read the downloaded PDFs. Instead of generating general summaries, the AI is programmed to extract specific decision models, safety triggers, and framework rules. It saves these notes as clean Markdown text files.
   > *(See an example of an AI-generated report in [examples/NIST.SP.800-53r5_audit.md](./examples/NIST.SP.800-53r5_audit.md))*
@@ -54,7 +54,7 @@ I didn't want the AI to summarize or draw conclusions for me. I want to do the a
 This file acts as the AI's logic board:
 * **Priority Logic:** Enforces the 3-tier Dynamic Switch (Human/Soul-First vs. Asset-First) mentioned above.
 * **Technical Translation Dictionary:** Equips the AI to translate jargon across industries. For example, if a cybersecurity paper mentions "Privilege Escalation," the AI tags it as a physical "Break-Glass" mechanism. It also translates organizational terms like "Personnel" into universal safety terms like "All-Souls-on-Site."
-* **The Evolution Directive:** Instructs the AI to be iterative. If it reads a paper that introduces a completely novel way of handling risk, it flags a suggested rule update to the me. This was made so that I didn't have to try and think of every issue that could potentially arise. 
+* **The Evolution Directive:** Instructs the AI to be iterative. If it reads a paper that introduces a completely novel way of handling risk, it flags a suggested rule update for me. This was made so that I didn't have to try and think of every issue that could potentially arise. 
 
 ### B. The Auditor Persona (`auditor.md`)
 This file dictates *how* the AI reads the text and formats its notes:
