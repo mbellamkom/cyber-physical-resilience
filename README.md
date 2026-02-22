@@ -111,7 +111,7 @@ To use it for a different project, you will need to replace the search terms in 
     └── skills/          
         └── auditor.md        # Librarian persona & evaluation logic
 
----
+
 ```
 ## 6. Getting Started
 If you are cloning this repository to run your own pipeline, please refer to the **[SETUP.md](./SETUP.md)** file for detailed instructions on required dependencies, environment configuration (`.env`), and how to run the components.
