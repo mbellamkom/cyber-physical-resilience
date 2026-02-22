@@ -1,0 +1,16 @@
+# --- Core Application Credentials & API Keys ---
+python-dotenv      # For loading environment variables and API keys from a local .env file
+
+# --- AI & LLM Integration ---
+google-genai       # Google's newest Gemini API client used by the AI Auditor / Librarian
+
+# --- Information Gathering & Web Scouting ---
+scholarly          # For querying Google Scholar to discover academic papers (used in scout.py)
+feedparser         # For parsing RSS/Atom feeds
+requests           # For making general HTTP requests during web scraping/interaction
+
+# --- Notifications & Alerts ---
+discord-webhook    # For sending discovery and status alerts directly to a Discord channel
+
+# --- Vector Database & AI Memory ---
+qdrant-client      # For interacting with the Qdrant vector database (local disk-persistence)
