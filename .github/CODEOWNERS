@@ -1,0 +1,10 @@
+# CODEOWNERS File
+# This file defines who owns specific code in the repository.
+
+# The core maintainers are the default owners of everything in the repo.
+* @mbellamkom
+
+# Strict ownership over the AI Agent prompt files
+# These files dictate the logic of the research pipeline and require explicit approval
+# from the primary researcher to be modified.
+/.agent/ @mbellamkom

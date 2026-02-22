@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use this research pipeline or framework, please cite it as below."
+authors:
+  - family-names: "Bellamkonda"
+    given-names: "Mitali"
+title: "Cyber-Physical Resilience Librarian"
+version: 1.0.0
+date-released: 2026-02-22
+url: "https://github.com/mbellamkom/cyber-physical-resilience"
+repository-code: "https://github.com/mbellamkom/cyber-physical-resilience"
+abstract: >-
+  To investigate Dynamic Risk Management models that shift from rigid security to flexible, risk-informed, and resilient behaviors. Focus: The "Break-Glass" intersection where security is degraded to preserve All-Souls-on-Site or prevent Downstream Physical Disasters.
+license: "MIT"
