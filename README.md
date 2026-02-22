@@ -29,6 +29,12 @@ To evaluate how different global frameworks (like NIST, ISO, and FEMA) handle th
 * **Tier 2: Remote Sites with Downstream Risk:** In unmanned locations like remote power substations or dams, the rule is **Balanced**. The system must prioritize asset security (locking down) specifically to prevent secondary, community-level physical disasters or environmental hazards.
 * **Tier 3: Isolated/Unmanned Sites:** In completely isolated environments, the rule is **Asset-First**, prioritizing strict mission continuity and hardware integrity above all else.
 
+### Tech Stack & Models
+* **AI Models:** Google Gemini (via `google-genai` API) for both discovery reasoning and technical extraction.
+* **Vector Database:** Qdrant (`qdrant-client`) for local, disk-persistent document embeddings and memory.
+* **Search Tools:** `scholarly` for Google Scholar academic papers, and `ddgs` for general web/grey literature.
+* **Notifications:** Discord Webhooks for real-time human-in-the-loop review alerts.
+
 ---
 
 ## 2. The Automation Pipeline
