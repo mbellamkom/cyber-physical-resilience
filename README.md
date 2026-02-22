@@ -38,7 +38,7 @@ The workflow is broken into three steps:
   > [*] Scouting: FEMA Lifelines Cyber Dependency
   > ```
   > **Discord Alert Example:**
-  > ![Scout Discord Alert](./screenshots/discord_alert.png)
+  > ![Scout Discord Alert](./screenshots/Scout_discord.png)
   
 * **Step 2: Technical Extraction (`librarian.py`)** A script that uses an AI model (Gemini) to read the downloaded PDFs. Instead of generating general summaries, the AI is programmed to extract specific decision models, safety triggers, and framework rules. It saves these notes as clean Markdown text files.
   > *(See an example of an AI-generated report in [examples/NIST.SP.800-53r5_audit.md](./examples/NIST.SP.800-53r5_audit.md))*
