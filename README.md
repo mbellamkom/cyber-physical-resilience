@@ -27,7 +27,16 @@ Reading hundreds of technical frameworks, academic papers, incident reports, and
 The workflow is broken into three steps:
 
 * **Step 1: Discovery (`scout.py`)** A background script that monitors academic databases for specific search terms related to system overrides and safety friction. When it finds a match, it downloads the PDF. It keeps a "smart memory" log of what it has already seen so it doesn't send duplicate alerts.
+  > **Example Terminal Output:**
+  > ```text
+  > [*] Scouting: NIST 800-82 safety over security
+  > [*] Scouting: FEMA Lifelines Cyber Dependency
+  > ```
+  > **Discord Alert Example:**
+  > ![Scout Discord Alert](./discord_alert.png)
+  
 * **Step 2: Technical Extraction (`librarian.py`)** A script that uses an AI model (Gemini) to read the downloaded PDFs. Instead of generating general summaries, the AI is programmed to extract specific decision models, safety triggers, and framework rules. It saves these notes as clean Markdown text files.
+  > *(See an example of an AI-generated report in [examples/NIST.SP.800-53r5_audit.md](./examples/NIST.SP.800-53r5_audit.md))*
 * **Step 3: Synthesis** The extracted notes and metadata are pushed via a command-line interface into NotebookLM. This creates a searchable, private Retrieval-Augmented Generation (RAG) library that I can use to connect the dots, map frameworks together, and draft the final analysis.
 
 ---
@@ -56,7 +65,7 @@ This file dictates *how* the AI reads the text and formats its notes:
 ## 4. Adapting this Framework for Your Own Research
 This setup is highly adaptable. While this specific project focuses on translating cybersecurity doctrine into operational emergency management risk, the underlying code can be used for large-scale literature reviews in any field. 
 
-By simply replacing the search terms in the Scout script and rewriting the rule files to fit your specific domain, you can force the AI to evaluate literature against your own theoretical frameworks.
+To use it for a different project, you will need to replace the search terms in the `scout.py` script and rewrite the agent prompts and rule files to force the AI to evaluate literature against your specific domain's theoretical frameworks. It is important to note that while the AI makes decisions during this process based on your rules, this pipeline is primarily designed to rapidly sort, extract, and catalog data. The final analysis and conclusions are still drawn by you.
 
 ---
 
@@ -64,14 +73,22 @@ By simply replacing the search terms in the Scout script and rewriting the rule 
 ```text
 /Cyber-Physical-Resilience
 ├── README.md            # You are here
+├── SETUP.md             # Installation & Usage Instructions
 ├── scout.py             # Discovery & Smart Memory script
 ├── librarian.py         # AI Auditor script
 ├── seen_sources.txt     # The Scout's memory log
 ├── .env                 # API Keys & Path Configs
 ├── sources/             # Raw PDF storage for ingestion
 ├── audits/              # Generated Markdown notes
+├── examples/            # Sample generated outputs
 └── .agent/    
+    ├── PROMPT_CHANGELOG.md   # Logs changes to AI instructions for academic rigor
     ├── rules/           
     │   └── PROJECT_RULES.md  # Core project constraints & priority logic
     └── skills/          
         └── auditor.md        # Librarian persona & evaluation logic
+
+---
+
+## 6. Getting Started
+If you are cloning this repository to run your own pipeline, please refer to the **[SETUP.md](./SETUP.md)** file for detailed instructions on required dependencies, environment configuration (`.env`), and how to run the components.
