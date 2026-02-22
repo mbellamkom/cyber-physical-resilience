@@ -112,7 +112,8 @@ def evaluate_snippet(title, snippet, rules_text):
     Title: {title}
     Snippet: {snippet}
     
-    Evaluate strictly. Does this directly touch upon the core thesis or constraint flags we are looking for?
+    Evaluate strictly. Read the "Scout Agent Scoring Criteria" section from the Project Rules above. 
+    Does this snippet meet the HIGH, MEDIUM, or LOW definition?
     Output strictly as valid JSON:
     {{
         "relevance": "HIGH" or "MEDIUM" or "LOW",

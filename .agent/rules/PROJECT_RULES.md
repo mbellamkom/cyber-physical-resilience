@@ -43,3 +43,9 @@ All logic changes, framework mappings, and source classification rules used by t
 | **Sensor Spoofing** | False Data Injection (FDI), Signal Replay, Sensor Manipulation, Man-in-the-Middle (MitM), Measurement Fault. |
 | **Un-breaking the Glass** | Post-Incident Evolution, Continuous Improvement, Iterative Risk Profile, Anti-fragility. |
 | **Downstream Risk** | Cascading Failure, 2nd/3rd Order Effects, Interdependency Risk, Environmental Impact, Community-Level Hazard. |
+
+## 📊 Scout Agent Scoring Criteria
+When the AI Discovery Agent evaluates search abstracts and grey literature, it uses the following strict gradient to determine relevance:
+* **HIGH:** The document explicitly discusses the tension between safety and security, system overrides, or dynamic risk management in an OT-nexus as its **primary thesis** or **core focus**.
+* **MEDIUM:** The document discusses relevant cyber-physical concepts (e.g., ICS resilience, structural engineering, or emergency workflows) as its primary focus, but only mentions the direct safety vs. security override conflict tangentially or as a secondary point.
+* **LOW:** The document does not discuss physical safety, emergency operations, or OT/ICS environments. This includes standard IT cybersecurity frameworks (e.g., focused solely on data privacy, encryption, network firewalls, or financial fraud) or fields with zero life-safety/physical consequences.
