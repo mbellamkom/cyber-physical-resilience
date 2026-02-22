@@ -1,4 +1,4 @@
 # Scout Smart Memory Log
-# This file tracks documents reviewed by the AI Scout Agent and rejected as LOW relevance.
-# This log provides an auditable history to ensure the research pipeline methodology is mathematically and academically reproducible.
-# Format: [Date] | [Source URL/Identifier] | [Scout Relevance Score] | [Agent Justification]
+# This file tracks ALL documents reviewed by the AI Scout Agent (HIGH, MEDIUM, and LOW relevance).
+# It serves as the agent's memory to ensure it never evaluates the same paper twice.
+# Format -> link|date
