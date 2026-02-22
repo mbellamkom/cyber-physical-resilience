@@ -1,5 +1,7 @@
 # Dynamic Risk Management: Cyber-Physical Research Pipeline
 
+This is an evolving project and is constantly being developed as the research progresses. 
+
 ## 1. Project Overview
 This project investigates **Dynamic Risk Management** in critical infrastructure, specifically, models that shift organizations from rigid security postures to flexible, risk-informed, and resilient behaviors such as adaptability (the ability to recognize when one risk outweighs another), [graceful degradation](https://www.sciencedirect.com/topics/computer-science/graceful-degradation) (maintaining critical components while letting non-critical ones degrade) and [post-incident evolution](https://dl.acm.org/doi/10.1145/3643666.3648578) (adjusting the existing system to incorporate lessons learned from an incident). 
 
@@ -77,6 +79,7 @@ To use it for a different project, you will need to replace the search terms in 
 /Cyber-Physical-Resilience
 ├── README.md            # You are here
 ├── SETUP.md             # Installation & Usage Instructions
+├── LICENSE              # MIT Open-Source License
 ├── scout.py             # Discovery & Smart Memory script
 ├── librarian.py         # AI Auditor script
 ├── seen_sources.txt     # The Scout's memory log
