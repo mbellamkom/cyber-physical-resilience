@@ -79,8 +79,8 @@ This file dictates *how* the AI reads the text and formats its notes:
 * **70% Parity Mapping:** When comparing different global frameworks, the AI is forbidden from using simple keyword matching. A mapping is only valid if it meets 3 out of 4 functional criteria: *Target* (same asset), *Intent* (same goal), *Hazard* (same consequence), and *Phase* (same timeline).
 * **FEMA Lifeline Translation:** To bridge the gap between digital and physical impacts, the AI maps any extracted cyber failures directly to FEMA's 7 Community Lifelines (e.g., mapping a "network outage" directly to the physical "Energy" impact). These lifelines are mapped to ISO critical sectors to account for international frameworks and terminology. 
 
-### C. The Transparency Log (`[.agent/PROMPT_CHANGELOG.md](./.agent/PROMPT_CHANGELOG.md)`)
-To ensure complete academic transparency, any adjustments made to the AI's logic, output constraints, or project rules are formally documented in the `[.agent/PROMPT_CHANGELOG.md](./.agent/PROMPT_CHANGELOG.md)` file. This prevents "shadow modifications" of the research methodology and guarantees that the AI's operating parameters remain auditable from the project's inception.
+### C. The Transparency Log ([.agent/PROMPT_CHANGELOG.md](./.agent/PROMPT_CHANGELOG.md))
+To ensure complete academic transparency, any adjustments made to the AI's logic, output constraints, or project rules are formally documented in the [.agent/PROMPT_CHANGELOG.md](./.agent/PROMPT_CHANGELOG.md) file. This prevents "shadow modifications" of the research methodology and guarantees that the AI's operating parameters remain auditable from the project's inception.
 
 ---
 
