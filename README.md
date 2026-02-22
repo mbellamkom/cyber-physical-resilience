@@ -18,7 +18,7 @@ This project investigates **Dynamic Risk Management** in critical infrastructure
 The core focus of this research is the **"Break-Glass" intersection**: the critical moment during an emergency where cybersecurity lockdowns must be intentionally degraded or bypassed to save lives or prevent a physical disaster. 
 
 When these cyber-physical emergencies occur, practitioners are caught between two operational philosophies:
-* **Cybersecurity (Traditonally Fail-Secure):** Defaults to locking systems down to protect data and hardware.
+* **Cybersecurity (Traditionally Fail-Secure):** Defaults to locking systems down to protect data and hardware.
 * **Emergency Management (Fail-Safe):** Defaults to keeping access open to preserve life and maintain critical operations.
 
 
@@ -56,7 +56,7 @@ The workflow is broken into three steps:
 
 ## 3. Agent Directives: Controlling the AI
 
-I didn't want the AI to summarize or draw conclusions for me. I want to do the analysis myself. So, to force the AI to produce rigorous, usable data, it operates under strict rule files located in the `.agent/directory:
+I didn't want the AI to summarize or draw conclusions for me. I want to do the analysis myself. So, to force the AI to produce rigorous, usable data, it operates under strict rule files located in the `.agent/` directory:
 
 ### A. The Master Rules (`PROJECT_RULES.md`)
 This file acts as the AI's logic board:
