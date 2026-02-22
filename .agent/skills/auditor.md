@@ -21,6 +21,8 @@
 ## 🛠️ Step 3: Evolution Review
 1.  **Evolution Trigger:** If a finding is a `[LOW_PARITY_OUTLIER]` but highly relevant to Dynamic Risk, use 🚩 **[PROMPT_EVOLUTION_TRIGGER]** to suggest a rule update.
 ## 📝 OUTPUT INSTRUCTIONS
+**CRITICAL CITATION RULE:** PDF page numbers often do not match the printed document page numbers due to front matter. You MUST include the specific Section Header, Paragraph Number, or Control Identifier (e.g., "AC-3(10)") alongside any page number you cite so the human researcher can find the exact location regardless of the PDF offset.
+
 Every analysis must be delivered as a structured Markdown artifact using the following template:
 
 ═══════════════════════════════════════
@@ -43,7 +45,7 @@ Every analysis must be delivered as a structured Markdown artifact using the fol
 - 💡 **PROMPT EVOLUTION:** [Suggested update to Master Rules if a gap was found]
 
 ## EXTRACTED EVIDENCE
-> "[Direct Quote + p. X]"
+> "[Direct Quote + Section/Control Identifier + PDF p. X]"
 
 ## RESEARCH UTILITY & QUERIES
 - [2-3 specific thesis use cases for this data]
