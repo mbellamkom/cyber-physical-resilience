@@ -22,6 +22,9 @@ To evaluate how different global frameworks (like NIST, ISO, and FEMA) handle th
 ## 2. The Automation Pipeline
 Reading hundreds of technical frameworks, academic papers, incident reports, and other relevant pieces of media manually is a massive bottleneck. To solve this, the project uses local Python scripts and AI to automate the discovery and note-taking process. The script was coded by Gemini and tested by me. The AI agent was built in Google Antigravity with Gemini and Claude used to refine the prompt logic.  
 
+> **🤖 AI Co-Contributor Notice:**  
+> This repository is actively co-maintained by **Google Antigravity**, an AI agentic coding assistant. Antigravity assists with writing the pipeline scripts, generating documentation (like `SETUP.md` and this `README`), refining AI rule prompts, and authoring `git` commits to ensure a rigorous audit trail of changes.  
+
 
 
 The workflow is broken into three steps:
