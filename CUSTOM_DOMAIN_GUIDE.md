@@ -1,8 +1,8 @@
 # Custom Domain Adaptation Guide
 
-This repository, originally built for analyzing Cyber-Physical Resilience and the intersection of physical life-safety with cybersecurity protocols, is designed to be highly modular. By adjusting a few configuration files and environment variables, you can repurpose this AI Librarian pipeline for *any* research domain (e.g., Medical Compliance, Financial Regulations, AI Ethics Guidelines).
+This repository, originally built for analyzing Cyber-Physical Resilience and the intersection of physical life-safety with cybersecurity protocols, features a highly modular Python codebase. However, while adjusting a few configuration files will conceptually redirect the pipeline to *any* research domain (e.g., Medical Compliance, Financial Regulations, AI Ethics Guidelines), **adapting the actual AI logic is a rigorous research endeavor.** It requires extensive prompt engineering, strict taxonomy definitions, and iterative edge-case testing to prevent the LLM from hallucinating on new domain material.
 
-Here is a step-by-step guide on how to adapt the tool for your own domain.
+Here is a step-by-step guide on how to fundamentally adapt the tool for your own domain.
 
 ## 1. Define Your Custom Agent Rules
 The core intelligence of this pipeline lies in how the AI "Librarian" evaluates documents. 
@@ -24,14 +24,14 @@ TAXONOMY_MODE=YOUR_CUSTOM_DOMAIN
 PRIMARY_LENS=FOCUS_ON_XYZ
 
 # 3. Define the Web Scout Topics (Comma-separated)
-# The scout.py file will use these terms when searching Google Scholar
+# The scout.py agent uses these terms as "seeds" to dynamically brainstorm optimized search query variants
 RESEARCH_TOPICS="Your Topic 1, Your Topic 2, Your Topic 3"
 ```
 
 ## 3. Verify the Pipeline
 Once your rules and environment variables are set:
 1. Run `python verify_setup.py` to ensure all necessary `sources/`, `archive/`, and database directories are initialized.
-2. Run `python scout.py` to automatically harvest academic papers based on your new `RESEARCH_TOPICS`.
-3. Drop the downloaded PDFs into the `sources/` folder and run `python librarian.py`. The agent will now audit the documents based exclusively on your custom logic rather than the default Cyber-Physical constraints!
+2. Run `python scout.py` to prompt the AI to brainstorm search queries and actively evaluate academic papers (via Google Scholar) and grey literature (via DuckDuckGo). The AI will strictly score all hits against your `MY_RULES.md` and alert you to HIGH relevance documents via Discord.
+3. Manually source the PDFs you want, drop them into the `sources/` folder, and run `python librarian.py`. The agent will now audit the documents based exclusively on your custom logic rather than the default Cyber-Physical constraints!
 
 *(Note: Always remember to abide by the `SECURITY.md` rules and never commit your `.env` file or raw source datasets).*

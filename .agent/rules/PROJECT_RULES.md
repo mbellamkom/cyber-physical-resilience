@@ -18,7 +18,9 @@ To investigate **Dynamic Risk Management** models that shift from rigid security
     * **Rule:** **Asset-First.** Prioritize Mission Continuity and Hardware Integrity.
 
 ## 🔄 The Evolution Directive (Master Clause)
-This framework is iterative. The Auditor is required to flag any scenario, linguistic nuance, or sector-specific logic that is not adequately covered by these rules. Use the flag 🚩 **[PROMPT_EVOLUTION_TRIGGER]** to suggest a specific update to these Project Rules.
+This framework is iterative. The AI is required to act as a rigorous auditor and must use the flag 🚩 **[PROMPT_EVOLUTION_TRIGGER]** to suggest a specific update to these Project Rules whenever it encounters *any* unanticipated edge-case. This includes:
+1. **Theoretical Gaps:** A scenario, linguistic nuance, novel risk framework, or sector-specific logic that is not adequately covered by the current Logic Dictionary.
+2. **Procedural/Pipeline Failures:** Any systemic formatting anomaly, broken PDF structure, unreadable page numbers, or script extraction failure that requires the human researcher to patch the pipeline or instructions.
 
 ## 🛑 Academic Constraint
 All logic changes, framework mappings, and source classification rules used by this Agent **must** be derived directly from the human researcher. The AI is strictly forbidden from autonomously hallucinating new rules, evaluation metrics, or taxonomy categories without prior explicit planning. Furthermore, any changes, additions, or modifications to any files within the `.agent/` directory **must** be explicitly reviewed and approved by the human researcher prior to implementation.

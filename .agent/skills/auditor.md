@@ -47,6 +47,12 @@ Every analysis must be delivered as a structured Markdown artifact using the fol
 - **Safety Over Security (SOS) Trigger:** [What condition allows the shift?]
 - **FEMA Lifelines:** [Identify impacted sectors]
 
+## CROSS-FRAMEWORK PARITY MAPPING
+- **70% Parity Mappings:** [List any frameworks mapped in Step 2, or state "None"]
+| Mapped Framework | Target Match | Intent Match | Hazard Match | Phase Match | Total Parity % |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| [Example: ISO 27001] | [Yes/No] | [Yes/No] | [Yes/No] | [Yes/No] | [e.g., 75%] |
+
 ## FLAGS & CONFLICTS
 - 🚩 **CONFLICT:** [Type: INHERENT_FRICTION / SYSTEMIC_NEGLIGENCE / REGULATORY_BARRIER]
 - 🔍 **SPOOF RISK:** [Vulnerability of verification sensors]

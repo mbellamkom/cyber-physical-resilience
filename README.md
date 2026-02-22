@@ -2,6 +2,16 @@
 
 This is an evolving project and is constantly being developed as the research progresses. 
 
+> **TL;DR:** This repository is an AI-powered pipeline designed to discover, read, and audit hundreds of technical documents (academic papers, government frameworks) to analyze how they handle physical life-safety emergencies in cyber-physical environments (e.g. power grid shutdowns, hospital ransomware).
+
+## Table of Contents
+1. [Project Overview](#1-project-overview)
+2. [The Automation Pipeline](#2-the-automation-pipeline)
+3. [Agent Directives: Controlling the AI](#3-agent-directives-controlling-the-ai)
+4. [Adapting this Framework for Your Own Research](#4-adapting-this-framework-for-your-own-research)
+5. [Directory Structure](#5-directory-structure)
+6. [Getting Started](#6-getting-started)
+
 ## 1. Project Overview
 This project investigates **Dynamic Risk Management** in critical infrastructure, specifically, models that shift organizations from rigid security postures to flexible, risk-informed, and resilient behaviors such as adaptability (the ability to recognize when one risk outweighs another), [graceful degradation](https://www.sciencedirect.com/topics/computer-science/graceful-degradation) (maintaining critical components while letting non-critical ones degrade) and [post-incident evolution](https://dl.acm.org/doi/10.1145/3643666.3648578) (adjusting the existing system to incorporate lessons learned from an incident). 
 
@@ -31,14 +41,9 @@ Reading hundreds of technical frameworks, academic papers, incident reports, and
 
 The workflow is broken into three steps:
 
-* **Step 1: Discovery (`scout.py`)** A background script that monitors academic databases for specific search terms related to system overrides and safety friction. When it finds a match, it downloads the PDF. It keeps a "smart memory" log of what it has already seen so it doesn't send duplicate alerts.
-  > **Example Terminal Output:**
-  > ```text
-  > [*] Scouting: NIST 800-82 safety over security
-  > [*] Scouting: FEMA Lifelines Cyber Dependency
-  > ```
-  > **Discord Alert Example:**
-  > ![Scout Discord Alert](./screenshots/Scout_discord.png)
+* **Step 1: Discovery (`scout.py`)** A **Pluggable Hybrid AI Agent**. Instead of passively scraping, it uses Gemini to dynamically brainstorm optimized search queries based on your broad research topics. It casts a wide net, evaluating peer-reviewed papers via **Google Scholar** and [grey literature](https://en.wikipedia.org/wiki/Grey_literature) (whitepapers, government directives, etc.) via **DuckDuckGo**. The agent reads title snippets and abstracts, rigorously scoring them against the `PROJECT_RULES.md` before sending high-quality hits to Discord for manual review. It maintains a smart memory and logs low-quality hits for future auditing.
+  > **🏛️ Architecture Note (Decoupled Pipeline):**  
+  > Discovery (`scout.py`) and Auditing (`librarian.py`) are deliberately kept **strictly decoupled**. Scout does *not* automatically download PDFs. This "Human-in-the-Loop" architecture empowers the researcher to manually source PDFs from paywalled, physical, or university-restricted library catalogs that the automated scraper cannot access, dropping them freely into the `sources/` pipeline. This basically lets us add sources from places that the scout does not have access to. Also this is done so you can further validate the sources before doing the technical extraction.
   
 * **Step 2: Technical Extraction (`librarian.py`)** A script that uses an AI model (Gemini) to read the downloaded PDFs. Instead of generating general summaries, the AI is programmed to extract specific decision models, safety triggers, and framework rules. It saves these notes as clean Markdown text files.
   > *(See an example of an AI-generated report in [examples/NIST.SP.800-53r5_audit.md](./examples/NIST.SP.800-53r5_audit.md))*
@@ -58,7 +63,7 @@ This file acts as the AI's logic board:
   * 🚩 **[INHERENT_FRICTION]:** Expected operational trade-offs (e.g., secure locks blocking rapid egress).
   * 🚩 **[SYSTEMIC_NEGLIGENCE]:** Crucial safety omissions in an OT context (the "Silent Document").
   * 🟡 **[OUT_OF_SCOPE_SILENCE]:** Documents where safety is genuinely outside their technical purview.
-* **The Evolution Directive:** Instructs the AI to be iterative. If it reads a paper that introduces a completely novel way of handling risk, it flags a suggested rule update for me. This was made so that I didn't have to try and think of every issue that could potentially arise. 
+* **The Evolution Directive:** Instructs the AI to be iterative and act as a global "bug bounty." If the AI reads a paper that introduces a completely novel concept (e.g., an unprecedented architectural framework or international protocol not currently in the Logic Dictionary), it must flag a suggested rule update. Crucially, this directive is flexible enough to catch *any* unanticipated edge-case, including formatting glitches, broken PDF OCR, missing page numbers, or script logic failures—ensuring the human researcher can patch the pipeline based on the AI's feedback.
 
 ### B. The Auditor Persona (`auditor.md`)
 This file dictates *how* the AI reads the text and formats its notes:
