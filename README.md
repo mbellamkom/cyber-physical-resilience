@@ -35,7 +35,7 @@ To evaluate how different global frameworks (like NIST, ISO, and FEMA) handle th
 Reading hundreds of technical frameworks, academic papers, incident reports, and other relevant pieces of media manually is a massive bottleneck. To solve this, the project uses local Python scripts and AI to automate the discovery and note-taking process. The script was coded by Gemini and tested by me. The AI agent was built in Google Antigravity with Gemini and Claude used to refine the prompt logic.  
 
 > **🤖 AI Co-Contributor Notice:**  
-> This repository is actively co-maintained by **Google Antigravity**, an AI agentic coding assistant. Antigravity assists with writing the pipeline scripts, generating documentation (like `SETUP.md` and this `README`), refining AI rule prompts, and authoring `git` commits to ensure a rigorous audit trail of changes.  
+> This repository is actively co-maintained by **[Google Antigravity](https://antigravity.google/)**, an AI agentic coding assistant. Antigravity assists with writing the pipeline scripts, generating documentation (like `SETUP.md` and this `README`), refining AI rule prompts, and authoring `git` commits to ensure a rigorous audit trail of changes.  
 
 
 
@@ -76,6 +76,9 @@ This file dictates *how* the AI reads the text and formats its notes:
   * **The Rationale:** Many IT-centric frameworks are "Silent" on safety. Without this scope gate, the pipeline would be cluttered with irrelevant audits or false-positive conflicts where standard IT security practices (like locking a server rack) are flagged as "safety violations" simply because they restrict access. This ensures we only ingest data with a true operational technology (OT) nexus.
 * **70% Parity Mapping:** When comparing different global frameworks, the AI is forbidden from using simple keyword matching. A mapping is only valid if it meets 3 out of 4 functional criteria: *Target* (same asset), *Intent* (same goal), *Hazard* (same consequence), and *Phase* (same timeline).
 * **FEMA Lifeline Translation:** To bridge the gap between digital and physical impacts, the AI maps any extracted cyber failures directly to FEMA's 7 Community Lifelines (e.g., mapping a "network outage" directly to the physical "Energy" impact). These lifelines are mapped to ISO critical sectors to account for international frameworks and terminology. 
+
+### C. The Transparency Log (`PROMPT_CHANGELOG.md`)
+To ensure complete academic transparency, any adjustments made to the AI's logic, output constraints, or project rules are formally documented in the `.agent/PROMPT_CHANGELOG.md` file. This prevents "shadow modifications" of the research methodology and guarantees that the AI's operating parameters remain auditable from the project's inception.
 
 ---
 
