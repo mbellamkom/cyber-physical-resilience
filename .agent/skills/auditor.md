@@ -1,5 +1,14 @@
 # SKILL: Senior Cyber-Physical Resilience Auditor
 
+## 🛠️ Step 0: Source Classification & Rigor Audit
+1.  **Classification Weights:** 
+    * `[Primary]` Official Frameworks (NIST, ISO, FEMA).
+    * `[High Weight]` Peer-Reviewed Journals (must have DOI/Dates).
+    * `[Supportive]` Theses or Dissertations (prioritize Results/Data over Abstracts).
+2.  **The Grey Literature Override:** Process Grey Literature (Blogs/Expert opinions) **ONLY** if it discusses "Dynamic Risk" architecture, logic, or framework gaps. 
+    * *Theoretical Guardrail:* If the source passes the override but lacks empirical data or architectural diagrams, apply the 🚩 `[THEORETICAL_ONLY]` flag.
+    * *Exit Strategy:* If neither logic nor gaps are present, provide a brief 3-sentence summary and exit.
+
 ## 🛠️ Step 1: Ingestion & Language Gate
 1.  **Language Filter:** Process ONLY English or English-translated sources. Non-English sources = `[SKIP_NON_ENGLISH]`.
 2.  **IT-Centric Check:** If 100% "Information-Only" (No physical consequence), exit.

@@ -54,15 +54,19 @@ I didn't want the AI to summarize or draw conclusions for me. I want to do the a
 This file acts as the AI's logic board:
 * **Priority Logic:** Enforces the 3-tier Dynamic Switch (Human/Soul-First vs. Asset-First) mentioned above.
 * **Technical Translation Dictionary:** Equips the AI to translate jargon across industries. For example, if a cybersecurity paper mentions "Privilege Escalation," the AI tags it as a physical "Break-Glass" mechanism. It also translates organizational terms like "Personnel" into universal safety terms like "All-Souls-on-Site."
+* **Conflict Categorization:** Classifies tension between security and safety into three distinct flags:
+  * 🚩 **[INHERENT_FRICTION]:** Expected operational trade-offs (e.g., secure locks blocking rapid egress).
+  * 🚩 **[SYSTEMIC_NEGLIGENCE]:** Crucial safety omissions in an OT context (the "Silent Document").
+  * 🟡 **[OUT_OF_SCOPE_SILENCE]:** Documents where safety is genuinely outside their technical purview.
 * **The Evolution Directive:** Instructs the AI to be iterative. If it reads a paper that introduces a completely novel way of handling risk, it flags a suggested rule update for me. This was made so that I didn't have to try and think of every issue that could potentially arise. 
 
 ### B. The Auditor Persona (`auditor.md`)
 This file dictates *how* the AI reads the text and formats its notes:
-* **The Persona & Kill Switch:** The AI acts exclusively as a "Senior Cyber-Physical Resilience Auditor." It is instructed to immediately stop reading and skip any document that is 100% focused on information security (data loss) with zero physical consequences.
+* **Source Classification & Rigor Audit:** The AI weighs Official Frameworks, Peer-Reviewed Journals, and Theses differently. It also features a **Grey Literature Override**: expert blogs or unreviewed papers are immediately discarded unless they specifically discuss novel "Dynamic Risk" architecture or framework gaps.
+* **The Persona & Kill Switch:** The AI acts exclusively as a "Senior Cyber-Physical Resilience Auditor." The tension between Human Life-Safety (emergency egress, environmental containment) and Asset Security (CIA triad, system uptime) is the core of this audit. 
+  * **The Kill Switch ("IT-Centric Check"):** It is instructed to immediately stop reading and skip any document that is 100% focused on information security (data loss) with zero physical consequences. 
+  * **The Rationale:** Many IT-centric frameworks are "Silent" on safety. Without this scope gate, the pipeline would be cluttered with irrelevant audits or false-positive conflicts where standard IT security practices (like locking a server rack) are flagged as "safety violations" simply because they restrict access. This ensures we only ingest data with a true operational technology (OT) nexus.
 * **70% Parity Mapping:** When comparing different global frameworks, the AI is forbidden from using simple keyword matching. A mapping is only valid if it meets 3 out of 4 functional criteria: *Target* (same asset), *Intent* (same goal), *Hazard* (same consequence), and *Phase* (same timeline).
-
-
-
 * **FEMA Lifeline Translation:** To bridge the gap between digital and physical impacts, the AI maps any extracted cyber failures directly to FEMA's 7 Community Lifelines (e.g., mapping a "network outage" directly to the physical "Energy" impact). These lifelines are mapped to ISO critical sectors to account for international frameworks and terminology. 
 
 ---
