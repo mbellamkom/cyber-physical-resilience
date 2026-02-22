@@ -42,6 +42,8 @@ Reading hundreds of technical frameworks, academic papers, incident reports, and
 The workflow is broken into three steps:
 
 * **Step 1: Discovery (`scout.py`)** A **Pluggable Hybrid AI Agent**. Instead of passively scraping, it uses Gemini to dynamically brainstorm optimized search queries based on your broad research topics. It casts a wide net, evaluating peer-reviewed papers via **Google Scholar** and [grey literature](https://en.wikipedia.org/wiki/Grey_literature) (whitepapers, government directives, etc.) via **DuckDuckGo**. The agent reads title snippets and abstracts, rigorously scoring them against the `PROJECT_RULES.md` before sending high-quality hits to Discord for manual review. It maintains a smart memory and logs low-quality hits for future auditing.
+  > ![Scout Discord Output](./screenshots/scout_discord_with_agent_reasoning.png)
+  > 
   > **🏛️ Architecture Note (Decoupled Pipeline):**  
   > Discovery (`scout.py`) and Auditing (`librarian.py`) are deliberately kept **strictly decoupled**. Scout does *not* automatically download PDFs. This "Human-in-the-Loop" architecture empowers the researcher to manually source PDFs from paywalled, physical, or university-restricted library catalogs that the automated scraper cannot access, dropping them freely into the `sources/` pipeline. This basically lets us add sources from places that the scout does not have access to. Also this is done so you can further validate the sources before doing the technical extraction.
   > 
@@ -77,8 +79,8 @@ This file dictates *how* the AI reads the text and formats its notes:
 * **70% Parity Mapping:** When comparing different global frameworks, the AI is forbidden from using simple keyword matching. A mapping is only valid if it meets 3 out of 4 functional criteria: *Target* (same asset), *Intent* (same goal), *Hazard* (same consequence), and *Phase* (same timeline).
 * **FEMA Lifeline Translation:** To bridge the gap between digital and physical impacts, the AI maps any extracted cyber failures directly to FEMA's 7 Community Lifelines (e.g., mapping a "network outage" directly to the physical "Energy" impact). These lifelines are mapped to ISO critical sectors to account for international frameworks and terminology. 
 
-### C. The Transparency Log (`PROMPT_CHANGELOG.md`)
-To ensure complete academic transparency, any adjustments made to the AI's logic, output constraints, or project rules are formally documented in the `.agent/PROMPT_CHANGELOG.md` file. This prevents "shadow modifications" of the research methodology and guarantees that the AI's operating parameters remain auditable from the project's inception.
+### C. The Transparency Log (`[.agent/PROMPT_CHANGELOG.md](./.agent/PROMPT_CHANGELOG.md)`)
+To ensure complete academic transparency, any adjustments made to the AI's logic, output constraints, or project rules are formally documented in the `[.agent/PROMPT_CHANGELOG.md](./.agent/PROMPT_CHANGELOG.md)` file. This prevents "shadow modifications" of the research methodology and guarantees that the AI's operating parameters remain auditable from the project's inception.
 
 ---
 
