@@ -18,6 +18,7 @@ def run_diagnostics():
     paths_to_check = {
         "Source Directory": os.getenv("SOURCE_DIR"),
         "Archive Directory": os.getenv("ARCHIVE_DIR"),
+        "Audit Directory": os.path.join(os.getenv("RESEARCH_PATH", "."), "audits"),
         "Database Directory": os.getenv("QDRANT_LOCAL_PATH")
     }
 
