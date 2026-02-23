@@ -6,6 +6,23 @@ This document tracks changes made to the AI agent prompts, rules, and logic file
 
 ---
 
+## [2026-02-23] - Tiered Triage Implementation & API Cost Optimization
+
+**Files Modified:** `scout.py`, `AGENT_ARCHITECTURE.md`, `logs/triage_log.md` (New)
+**Change Type:** Structural Pipeline Refactor
+
+**Incident / Reasoning:** 
+During the discovery phase, the script triggered a `429 RESOURCE_EXHAUSTED` error upon hitting the Gemini 2.5 Flash Free Tier limit (20 concurrent bursts / 15 requests per minute). To maintain a zero-cost research methodology and prevent future rate-limiting blocks, the agent architecture needed to shift from a high-frequency polling script to a multi-stage, cost-optimized batching pipeline.
+
+**Modifications & Upgrades:**
+1. **Directory Restructure:** Centralized `seen_sources.txt` and `rejected_sources.md` into a new `/logs/` directory to modularize the codebase.
+2. **Stage 1 - The Python Sieve:** Added a zero-cost lexical string analysis to instantly drop documents lacking baseline context metrics (e.g., "safety", "ot", "scada", "override").
+3. **Stage 2 - The Local Bouncer:** Integrated `ollama` endpoints allowing `scout.py` to pipe Sieve-surviving snippets in batches of 5-8 straight into local inference (`deepseek-r1:8b`). Added the `[SILENT_ANOMALY]` flag to catch and log major IT frameworks that are completely silent on physical safety to a newly provisioned `logs/triage_log.md`.
+4. **Resilience Engineering:** Added `try/except` guards to the Gemini Cloud calls. If the Gemini API is exhausted, the script no longer crashes; it gracefully returns fallback strings to allow the local pipeline to continue operation.
+5. **Documentation Parity:** Replaced the Discovery Phase flowchart in `AGENT_ARCHITECTURE.md` to map out the new three-stage pipeline.
+
+> Researcher Note: This is an independent project so I wanted to keep costs low while still getting the data I required. 
+
 ## [2026-02-23] - The Phantom Commit & Rebuilding the Perimeter
 
 **Incident:** A Git merge conflict resolution (`checkout --ours`) inadvertently wiped the `.agent/` directory before the new governance files were fully tracked in the shared history. This temporarily erased the agent's rules and left it in an unconstrained state.

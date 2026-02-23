@@ -13,34 +13,37 @@ flowchart TD
     classDef output fill:#fbb,stroke:#333,stroke-width:2px,color:#000;
     classDef flag fill:#ff9,stroke:#e6b800,stroke-width:2px,color:#000;
 
-    A[Document DB & Web Search]:::input --> B(Scout Agent):::agent
+    A[Document DB & Web Search]:::input --> B{Stage 1: Python Sieve}:::logic
+    B -- "No Match" --> C[Zero-Cost Discard]:::output
     
-    subgraph Discovery[Discovery Phase]
-        B --> C{Grey Lit Override}:::logic
-        C -- "Yes (Dynamic Risk context)" --> D[Process Source]
-        C -- "No" --> E[Reject]
-        D --> F{Relevance Score}:::logic
-        F -- "HIGH / MEDIUM" --> G(Librarian / Auditor Agent):::agent
-        F -- "LOW" --> E
+    subgraph Discovery[Tiered Triage Pipeline]
+        B -- "Keywords Matched" --> D(Stage 2: Local Bouncer / DeepSeek):::agent
+        D --> E{Triage Score}:::logic
+        E -- "LOW / SILENT_ANOMALY" --> F[Triage Log]:::output
+        E -- "HIGH / MEDIUM" --> G(Stage 3: Cloud Specialist / Gemini):::agent
+        G --> H{Final Relevance Score}:::logic
+        H -- "LOW" --> I[Rejected Log]:::output
+        H -- "HIGH / MEDIUM" --> J(Librarian / Auditor Agent):::agent
     end
 
     subgraph Evaluation[Evaluation Phase - The Auditor]
-        G --> H{The Dynamic Switch}:::logic
+        J --> K{The Dynamic Switch}:::logic
         
-        H -->|Tier 1: Manned| I[Human/Soul-First Priority]:::logic
-        H -->|Tier 2: Remote w/ Downstream Risk| J[Balanced Priority]:::logic
-        H -->|Tier 3: Isolated| K[Asset-First Priority]:::logic
+        K -->|Tier 1: Manned| L[Human/Soul-First Priority]:::logic
+        K -->|Tier 2: Remote w/ Downstream Risk| M[Balanced Priority]:::logic
+        K -->|Tier 3: Isolated| N[Asset-First Priority]:::logic
         
-        I & J & K --> L[Apply Logic Dictionary]:::logic
-        L --> M(Extract Conflicts & Mechanisms)
+        L & M & N --> O[Apply Logic Dictionary]:::logic
+        O --> P(Extract Conflicts & Mechanisms)
     end
 
     subgraph OutputPhase[Output & Taxonomy Flags]
-        M --> N[JSON Final Analysis]:::output
-        M -.-> O[🚩 SYSTEMIC OMISSION]:::flag
-        M -.-> P[🚩 INHERENT FRICTION]:::flag
-        M -.-> Q[🟡 OUT OF SCOPE]:::flag
-        M -.-> R[🚩 PROMPT EVOLUTION TRIGGER]:::flag
+        P --> Q[JSON Final Analysis]:::output
+        P -.-> R[🚩 SYSTEMIC OMISSION]:::flag
+        P -.-> S[🚩 INHERENT FRICTION]:::flag
+        P -.-> T[🟡 OUT OF SCOPE]:::flag
+        P -.-> U[🚩 PROMPT EVOLUTION TRIGGER]:::flag
+        E -.-> V[🚩 SILENT ANOMALY]:::flag
     end
 ```
 
