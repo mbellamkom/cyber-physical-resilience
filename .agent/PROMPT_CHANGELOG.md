@@ -6,6 +6,16 @@ This document tracks changes made to the AI agent prompts, rules, and logic file
 
 ---
 
+## [2026-02-22] - Agent Operational Directives
+
+**Files Modified:** `rules/PROJECT_RULES.md`
+**Change Type:** Agent Logic Constraint
+**Reasoning:** 
+To ensure the AI agent acting in this repository does not get stuck executing standard Linux/bash chained commands (`&&`) inside a PowerShell environment. 
+
+**Modification:**
+Added the `## 💻 Agent Operational Directives` section to `PROJECT_RULES.md` to forcefully instruct the AI to check the shell environment before chaining terminal commands (preventing syntax errors).
+
 ## [2026-02-22] - Methodology Review Iterations
 
 **Researcher Note:** I talked to Perplexity AI to analyze the current methodology and suggest improvements. I wanted to refine the guardrails to prevent assumptions, but I also needed them to be flexible enough that we aren't ignoring useful information. The following four updates are all based on that review.
