@@ -6,6 +6,20 @@ This document tracks changes made to the AI agent prompts, rules, and logic file
 
 ---
 
+## [2026-02-23] - The Phantom Commit & Rebuilding the Perimeter
+
+**Incident:** A Git merge conflict resolution (`checkout --ours`) inadvertently wiped the `.agent/` directory before the new governance files were fully tracked in the shared history. This temporarily erased the agent's rules and left it in an unconstrained state.
+
+**Recovery:** Rather than rewriting Git history, the unconstrained agent was authorized to search its local memory artifacts. It successfully reconstructed `GOVERNANCE_PROTOCOL.md` from its short-term cache and proactively generated a highly formal compliance mapping (NIST AI RMF 2026, ISO/IEC 42001, EU AI Act Art. 14), which was retained for academic rigor.
+
+**Refinement:** To ensure the restored protocol had programmatic "teeth," a two-part mechanical lock was implemented:
+1. **Split-Trust Architecture:** Explicit definitions for the Restricted Zone (`.agent/`) versus the Operational Zone (scripts) were appended to the protocol.
+2. **Execution Lock:** A strict JSON execution lock was re-injected at the top of `PROJECT_RULES.md`.
+
+**Evolution (Self-Reminding Key):** To mitigate the risk of password fatigue stalling workflows, the override keyword was updated to `APPROVED` and the JSON `violation_protocol` was rewritten. The system is now self-documenting and resilient to automated hallucinations and human memory lapses.
+
+Researcher's Note: Irony dictates that the most robust security feature in this autonomous governance pipeline—the self-documenting violation protocol—was engineered specifically to mitigate human memory constraints (i.e., the Lead Researcher knowing they will absolutely forget the override keyword by next week). [Gemini generated this note for me which I have found funny enough to keep as is.]
+
 ## [2026-02-22] - Governance Framework Formalization & Compounding Anomaly Resolution
 
 **Files Modified:** `rules/PROJECT_RULES.md`, `rules/GOVERNANCE_PROTOCOL.md`, `PROMPT_CHANGELOG.md`
