@@ -5,6 +5,12 @@ Thank you for your interest in contributing to the Cyber-Physical Resilience res
 ## Branching and Commits
 To maintain the integrity of our research and codebase, **no one is permitted to make direct changes to the `main` branch aside from the core maintainers**. All updates to `main` must go through a review process.
 
+### Branching Conventions
+When creating feature branches, we generally organize them by their purpose to keep the repository history clean:
+- **`housekeeping/...`**: For administrative, structural, security, or non-substantive maintenance tasks (e.g., updating documentation, tweaking `.gitignore`, configuring project setups).
+- **`agent-logic/...`**: Strictly reserved for substantive changes to the core research methodology and AI extraction logic (e.g., modifying `PROJECT_RULES.md` or updating extraction prompts in `auditor.md`).
+- **`feature/...` or `fix/...`**: Used for code changes to the Python execution scripts (e.g., `scout.py`, `librarian.py`) that are not intrinsically tied to a specific methodological update.
+
 ## How to Contribute
 If you would like to contribute:
 1. **Fork the repository** to your own GitHub account.
