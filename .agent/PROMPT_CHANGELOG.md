@@ -6,6 +6,78 @@ This document tracks changes made to the AI agent prompts, rules, and logic file
 
 ---
 
+## [2026-02-22] - Methodology Review Iterations
+
+**Researcher Note:** I talked to Perplexity AI to analyze the current methodology and suggest improvements. I wanted to refine the guardrails to prevent assumptions, but I also needed them to be flexible enough that we aren't ignoring useful information. The following four updates are all based on that review.
+
+### Update 1: Methodology Refinement: Broadening Grey Literature Criteria
+
+**Files Modified:** `rules/PROJECT_RULES.md`, `skills/auditor.md`
+**Change Type:** Logic Constraint Refinement
+**Reasoning:** 
+Expanded what counts for grey literature and discovery. The AI should allow sources that discuss adaptive or conditional safety/security trade-offs, runtime risk decisions, or emergency operating modes even if they do not explicitly use the exact phrase "Dynamic Risk." This prevents the pipeline from filtering out highly relevant operational concepts.
+
+**Modification:**
+Updated `## 📊 Scout Agent Scoring Criteria` in `PROJECT_RULES.md` to explicitly include conditional safety/security trade-offs and runtime risk decisions in the HIGH and MEDIUM tiers.
+Updated the `Grey Literature Override` in `auditor.md` to include these broader concepts as valid triggers to process a blog or expert opinion.
+
+### Update 2: Label Refinement: Softening Systemic Negligence
+
+**Files Modified:** `rules/PROJECT_RULES.md`, `skills/auditor.md`, `README.md`, `CUSTOM_DOMAIN_GUIDE.md`
+**Change Type:** Terminology Update
+**Reasoning:** 
+The term "Negligence" implies deliberateness or malice, which is overly normative for a structural gap analysis. The researcher requested the term be softened to "Omission" to better reflect an objective gap rather than a subjective failure.
+
+**Modification:**
+Replaced all instances of `[SYSTEMIC_NEGLIGENCE]` with `[SYSTEMIC_OMISSION]` across all project files.
+
+### Update 3: Methodology Refinement: Softening Definitions & Contextual Mapping
+
+**Files Modified:** `rules/PROJECT_RULES.md`, `skills/auditor.md`
+**Change Type:** Logic Refinement & Contextual Constraint
+**Reasoning:** 
+Added explicit clauses to prevent the AI from over-classifying documents or applying normative judgments to objective coding categories. Ensures terms like "Privilege Escalation" are mapped only when contextually justified as emergency overrides.
+
+**Modification:**
+Added a note to `## 🚩 Audit Terminology & Resilience Flags` to treat `[SYSTEMIC_OMISSION]` strictly as an objective coding category.
+Added a contextual mapping rule to `### 📖 Logic Dictionary (Technical Translation Layer)` to prevent generic mapping of IT terms to "Break-Glass" without emergency context.
+Added a constraint to `## 🛠️ Step 2: Global Mapping & Functional Parity` in `auditor.md` to ensure "break-glass" mechanisms analyzed are explicitly intended for emergencies.
+
+### Update 4: Methodology Refinement: Provisional Status & Dynamic Switch Role
+
+**Files Modified:** `rules/PROJECT_RULES.md`
+**Change Type:** Logic Constraint Refinement & Analytic Frame
+**Reasoning:** 
+Added explicit clauses to prevent the AI from treating initial analytic constructs as rigid ground truths. This mitigates hallucinated mappings and encourages the AI to suggest taxonomy evolutions when encountering novel frameworks.
+
+**Modification:**
+Added the `## ⚠️ Provisional Analytic Constructs` section to explicitly state that all parameters are preliminary and expected to evolve.
+Added an analytic lens disclaimer to `## ⚖️ Global Priority Logic (The Dynamic Switch)` instructing the AI not to force a fit if a document's context maps to multiple tiers or none.
+
+### Update 5: Methodology Refinement: Support None/Unknown in Extractions
+
+**Files Modified:** `skills/auditor.md`
+**Change Type:** Output Specification Update
+**Reasoning:** 
+Prevent the AI from hallucinating mechanisms where none exist by explicitly instructing the auditor to output "None/Unknown" or "Not enough evidence" when appropriate. This avoids over-classification and preserves factual accuracy.
+
+**Modification:**
+Added `⚪ UNKNOWN` to the Flexibility Rating options in the `## RESILIENT FLEXIBILITY ANALYSIS` section of the output template.
+Added explicit instructions to output "None" or "None/Unknown" for the "Break-Glass" Mechanism and Safety Over Security (SOS) Trigger fields when no mechanism is found.
+
+### Update 6: Clarifying Dynamic Switch Examples
+
+**Files Modified:** `rules/PROJECT_RULES.md`, `README.md`
+**Change Type:** Logic Constraint Refinement & Analytic Frame
+**Reasoning:** 
+To ensure the AI (and any external readers) understand exactly *why* the priority of physical safety might shift depending on the context, we added more explicit examples to the three-tier Global Priority Logic. This is especially important for Tier 2, where "lessening" immediate on-site safety can sound counterintuitive without explaining that asset security (locking out hackers) *becomes* the primary safety mechanism to prevent a larger, downstream catastrophe. 
+
+Additionally, we ensured the Tier 3 (Isolated/Unmanned) example specifically utilized "deep-space probes" because other seemingly isolated environments (remote data centers, weather buoys) still occasionally require humans on-site for physical maintenance, violating the pure "no human risk" definition of that tier.
+
+**Modification:**
+Updated the `## ⚖️ Global Priority Logic (The Dynamic Switch)` section in `PROJECT_RULES.md` and the `README.md` to include specific scenarios (e.g., remote dams, deep-space probes) that illustrate the reasoning behind the "Expected Priority" for each tier.
+
+
 ## [2026-02-22] - Parity Logic Extraction Formatting
 
 **Files Modified:** `skills/auditor.md`
@@ -62,7 +134,7 @@ Added a `**CRITICAL CITATION RULE**` to the Output Instructions. The AI is now e
 Based on direct researcher input and initial project planning logs, the methodology required strict classification of sources, particularly a "Grey Literature Override" to prevent the dataset from being flooded with theoretical blog posts that lack empirical data. Additionally, the conflict identification matrix lacked nuance for frameworks that are silent on safety. Finally, the technical translation layer needed broader definitions for "Asset Security" (to move beyond the CIA Triad) and "Human Life-Safety" to ensure accurate mapping across international frameworks.
 
 **Modification:**
-Added "Step 0: Source Classification & Rigor Audit" to `auditor.md` to weigh frameworks against peer-reviewed journals and implement the Grey Literature override rule. Updated `PROJECT_RULES.md` to break the conflict flag into three distinct categories: `[INHERENT_FRICTION]` for expected trade-offs, `[SYSTEMIC_NEGLIGENCE]` for dangerous safety omissions in an OT environment, and `[OUT_OF_SCOPE_SILENCE]` for IT frameworks where safety is genuinely not applicable. This prevents the AI from falsely penalizing strictly digital, information-only standards that have no physical world impact. Moreover, expanded the "Asset Security" and "Human Life-Safety" mapping targets in the Logic Dictionary to encompass a globally inclusive set of security and safety terminologies.
+Added "Step 0: Source Classification & Rigor Audit" to `auditor.md` to weigh frameworks against peer-reviewed journals and implement the Grey Literature override rule. Updated `PROJECT_RULES.md` to break the conflict flag into three distinct categories: `[INHERENT_FRICTION]` for expected trade-offs, `[SYSTEMIC_OMISSION]` for dangerous safety omissions in an OT environment, and `[OUT_OF_SCOPE_SILENCE]` for IT frameworks where safety is genuinely not applicable. This prevents the AI from falsely penalizing strictly digital, information-only standards that have no physical world impact. Moreover, expanded the "Asset Security" and "Human Life-Safety" mapping targets in the Logic Dictionary to encompass a globally inclusive set of security and safety terminologies.
 
 ## [2026-02-21] - Academic Constraint Fortification
 

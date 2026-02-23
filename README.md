@@ -25,9 +25,15 @@ When these cyber-physical emergencies occur, practitioners are caught between tw
 
 To evaluate how different global frameworks (like NIST, ISO, and FEMA) handle this conflict, this project utilizes a semi-automated literature review pipeline. The pipeline uses a three-tier **Dynamic Switch** logic to determine how systems *should* behave in an emergency:
 
-* **Tier 1: Manned Facilities (High Proximity):** In locations like hospitals or transport hubs, the rule is **Human/Soul-First**. Security must fail-open to ensure it never impedes escape routes or life-support for **All-Souls-on-Site** (prioritizing biological life over data or hardware).
-* **Tier 2: Remote Sites with Downstream Risk:** In unmanned locations like remote power substations or dams, the rule is **Balanced**. The system must prioritize asset security (locking down) specifically to prevent secondary, community-level physical disasters or environmental hazards.
-* **Tier 3: Isolated/Unmanned Sites:** In completely isolated environments, the rule is **Asset-First**, prioritizing strict mission continuity and hardware integrity above all else.
+* **Tier 1: Manned Facilities (High Proximity):** In locations where humans are continuously present (e.g., hospitals, transport hubs), the rule is **Human/Soul-First**. Security must fail-open to ensure it never impedes escape routes or life-support for **All-Souls-on-Site** (e.g., a secure door opening during a fire, prioritizing biological life over data or hardware).
+* **Tier 2: Remote Sites with Downstream Risk:** In unmanned locations controlling critical physical processes (e.g., remote power substations or dams), the rule is **Balanced**. The system must weigh the immediate physical safety of any potentially dispatched responders/crews against the potential for a secondary, community-level catastrophic event. Here, asset security (e.g., locking out hackers) *becomes* the primary safety mechanism to prevent the dam from flooding a town.
+* **Tier 3: Isolated/Unmanned Sites:** In completely isolated environments with no immediate or downstream human risk (e.g., deep-space probes), the rule is **Asset-First**, prioritizing strict mission continuity and hardware integrity above all else (e.g., bricking a system to protect data).
+
+### Tech Stack & Models
+* **AI Models:** Google Gemini (via `google-genai` API) for both discovery reasoning and technical extraction.
+* **Vector Database:** Qdrant (`qdrant-client`) for local, disk-persistent document embeddings and memory.
+* **Search Tools:** `scholarly` for Google Scholar academic papers, and `ddgs` for general web/grey literature.
+* **Notifications:** Discord Webhooks for real-time human-in-the-loop review alerts.
 
 ### Tech Stack & Models
 * **AI Models:** Google Gemini (via `google-genai` API) for both discovery reasoning and technical extraction.
@@ -72,7 +78,7 @@ This file acts as the AI's logic board:
 * **Technical Translation Dictionary:** Equips the AI to translate jargon across industries. For example, if a cybersecurity paper mentions "Privilege Escalation," the AI tags it as a physical "Break-Glass" mechanism. It also translates organizational terms like "Personnel" into universal safety terms like "All-Souls-on-Site."
 * **Conflict Categorization:** Classifies tension between security and safety into three distinct flags:
   * 🚩 **[INHERENT_FRICTION]:** Expected operational trade-offs (e.g., secure locks blocking rapid egress).
-  * 🚩 **[SYSTEMIC_NEGLIGENCE]:** Crucial safety omissions in an OT context (the "Silent Document").
+  * 🚩 **[SYSTEMIC_OMISSION]:** Crucial safety omissions in an OT context (the "Silent Document").
   * 🟡 **[OUT_OF_SCOPE_SILENCE]:** Documents where safety is genuinely outside their technical purview.
 * **The Evolution Directive:** Instructs the AI to be iterative and act as a global "bug bounty." If the AI reads a paper that introduces a completely novel concept (e.g., an unprecedented architectural framework or international protocol not currently in the Logic Dictionary), it must flag a suggested rule update. Crucially, this directive is flexible enough to catch *any* unanticipated edge-case, including formatting glitches, broken PDF OCR, missing page numbers, or script logic failures—ensuring the human researcher can patch the pipeline based on the AI's feedback.
 
@@ -121,3 +127,5 @@ To use it for a different project, you will need to replace the search terms in 
 ```
 ## 6. Getting Started
 If you are cloning this repository to run your own pipeline, please refer to the **[SETUP.md](./SETUP.md)** file for detailed instructions on required dependencies, environment configuration (`.env`), and how to run the components.
+
+Before running the pipeline at scale, it is highly recommended to conduct a calibration phase to ensure the AI's extraction logic perfectly aligns with your research domain. See the **[CALIBRATION_GUIDE.md](./CALIBRATION_GUIDE.md)** for instructions on this manual validation process.

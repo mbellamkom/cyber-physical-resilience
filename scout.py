@@ -42,36 +42,40 @@ def is_new_discovery(link, refresh_days=30):
         lines = f.read().splitlines()
     for line in lines:
         if "|" in line:
-            seen_link, date_str = line.split("|")
-            if seen_link == link:
-                try:
-                    last_seen = datetime.datetime.strptime(date_str, "%Y-%m-%d")
-                    if (datetime.datetime.now() - last_seen).days < refresh_days:
-                        return False 
-                except ValueError: continue
+            parts = line.split("|")
+            if len(parts) >= 2:
+                seen_link, date_str = parts[0], parts[1]
+                if seen_link == link:
+                    try:
+                        last_seen = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+                        if (datetime.datetime.now() - last_seen).days < refresh_days:
+                            return False 
+                    except ValueError: continue
     return True
 
-def log_discovery(link):
+def log_discovery(link, relevance="UNKNOWN", source_type="UNKNOWN", notes=""):
     """Records a new discovery in the memory file."""
     today = datetime.datetime.now().strftime("%Y-%m-%d")
+    # Clean notes to not break our | delimiter or lines
+    clean_notes = str(notes).replace('\n', ' ').replace('|', '-')
     with open(MEMORY_FILE, "a", encoding="utf-8") as f:
-        f.write(f"{link}|{today}\n")
+        f.write(f"{link}|{today}|{relevance}|{source_type}|{clean_notes}\n")
 
-def notify_detailed(title, link, score, rationale):
+def notify_detailed(title, link, score, rationale, source_type="UNKNOWN"):
     """Sends scored alert to Discord."""
     status_icon = "🟢" if score == "HIGH" else "🟡"
     if is_new_discovery(link):
         message = f"🔍 **Scout Alert:** [{status_icon} {score}]\n**Title:** {title}\n**Link:** <{link}>\n\n**Agent Justification:** {rationale}"
         if WEBHOOK_URL: DiscordWebhook(url=WEBHOOK_URL, content=message).execute()
-        log_discovery(link)
+        log_discovery(link, score, source_type, rationale)
 
-def log_rejection(title, link, rationale):
+def log_rejection(title, link, rationale, source_type="UNKNOWN"):
     """Logs low-quality hits to a local markdown file before marking them as seen."""
     if is_new_discovery(link):
         today = datetime.datetime.now().strftime("%Y-%m-%d")
         with open(REJECTED_LOG, "a", encoding="utf-8") as f:
             f.write(f"- **[{today}]** [{title}]({link})\n  - *Rationale:* {rationale}\n\n")
-        log_discovery(link)
+        log_discovery(link, "LOW", source_type, rationale)
 
 # --- GENAI CAPABILITIES ---
 
@@ -149,9 +153,9 @@ def search_scholar(query, rules_text, limit=3):
             
             print(f"  -> Analyzed {title[:40]}... Score: {rel}")
             if rel in ["HIGH", "MEDIUM"]:
-                notify_detailed(title, link, rel, rat)
+                notify_detailed(title, link, rel, rat, source_type="Academic")
             else:
-                log_rejection(title, link, rat)
+                log_rejection(title, link, rat, source_type="Academic")
                 
             time.sleep(15) # Scholar rate limits
     except StopIteration:
@@ -177,9 +181,9 @@ def search_ddg(query, rules_text, limit=4):
                 
                 print(f"  -> Analyzed {title[:40]}... Score: {rel}")
                 if rel in ["HIGH", "MEDIUM"]:
-                    notify_detailed(title, link, rel, rat)
+                    notify_detailed(title, link, rel, rat, source_type="Grey Literature")
                 else:
-                    log_rejection(title, link, rat)
+                    log_rejection(title, link, rat, source_type="Grey Literature")
                     
                 time.sleep(5) # DDG is more forgiving
     except Exception as e:
