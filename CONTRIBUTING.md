@@ -8,9 +8,10 @@ To maintain the integrity of our research and codebase, **no one is permitted to
 ## How to Contribute
 If you would like to contribute:
 1. **Fork the repository** to your own GitHub account.
-2. **Create a new branch** for your feature, fix, or research addition.
-3. **Make your changes**, ensuring they align with our project goals and `.agent/rules/PROJECT_RULES.md`.
-4. **Submit a Pull Request (PR)** against the `main` branch of this repository.
+2. **Review the Guides**: Check the `docs/guides/` folder for important calibration and domain adaptation instructions.
+3. **Create a new branch** for your feature, fix, or research addition.
+4. **Make your changes**, ensuring they align with our project goals and `.agent/rules/PROJECT_RULES.md`.
+5. **Submit a Pull Request (PR)** against the `main` branch of this repository. **Do NOT submit Pull Requests that alter the core logic to fit a completely different domain.** Domain adaptations should remain in your own private forks.
 
 ### Review and Merge Process
 To maintain strict control over the research pipeline:

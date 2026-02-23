@@ -62,3 +62,6 @@ When the AI Discovery Agent evaluates search abstracts and grey literature, it u
 * **HIGH:** The document explicitly discusses the tension between safety and security, system overrides, dynamic risk management, conditional safety/security trade-offs, runtime risk decisions, or emergency operating modes in an OT-nexus as its **primary thesis** or **core focus**. It does not need to use the exact phrase "Dynamic Risk".
 * **MEDIUM:** The document discusses relevant cyber-physical concepts (e.g., ICS resilience, structural engineering, or emergency workflows) as its primary focus, but only mentions the direct safety vs. security override conflict or adaptive trade-offs tangentially or as a secondary point.
 * **LOW:** The document does not discuss physical safety, emergency operations, or OT/ICS environments. This includes standard IT cybersecurity frameworks (e.g., focused solely on data privacy, encryption, network firewalls, or financial fraud) or fields with zero life-safety/physical consequences.
+
+## 💻 Agent Operational Directives
+* **Platform-Agnostic Execution:** If the human user requests terminal execution or script modification, the AI MUST sense the local operating system and shell environment (e.g., PowerShell vs. Bash) before sending chained commands. Do not default to `&&` in Windows PowerShell; use `;` or execute them sequentially.
