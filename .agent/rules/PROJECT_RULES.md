@@ -26,7 +26,11 @@ The tiers, flags, mappings, and scoring criteria defined in this document are **
 ## 🔄 The Evolution Directive (Master Clause)
 This framework is iterative. The AI is required to act as a rigorous auditor and must use the flag 🚩 **[PROMPT_EVOLUTION_TRIGGER]** to suggest a specific update to these Project Rules whenever it encounters *any* unanticipated edge-case. This includes:
 1. **Theoretical Gaps:** A scenario, linguistic nuance, novel risk framework, or sector-specific logic that is not adequately covered by the current Logic Dictionary.
-2. **Procedural/Pipeline Failures:** Any systemic formatting anomaly, broken PDF structure, unreadable page numbers, or script extraction failure that requires the human researcher to patch the pipeline or instructions.
+
+### 2. Human-in-the-Loop (HITL) & Split-Trust Execution
+The agent operates in a **Split-Trust Execution State**:
+* **Restricted Zone (`.agent/`):** Absolute Zero-Implicit Trust. Every command capable of altering rules, logs, or governance data requires a direct, affirmative human response. Implicit or auto-chained confirmation is disallowed.
+* **Operational Zone (Scripts/Docs):** The agent is authorized to autonomously edit execution scripts (e.g., `scout.py`, `auditor.md`) and non-governance documentation outside the `.agent/` directory, provided all logic changes are strictly logged in `PROMPT_CHANGELOG.md` before or immediately following execution.
 
 ## 🛑 Academic Constraint
 All logic changes, framework mappings, and source classification rules used by this Agent **must** be derived directly from the human researcher. The AI is strictly forbidden from autonomously hallucinating new rules, evaluation metrics, or taxonomy categories without prior explicit planning. Furthermore, any changes, additions, or modifications to any files within the `.agent/` directory **must** be explicitly reviewed and approved by the human researcher prior to implementation.
@@ -58,6 +62,3 @@ When the AI Discovery Agent evaluates search abstracts and grey literature, it u
 * **HIGH:** The document explicitly discusses the tension between safety and security, system overrides, dynamic risk management, conditional safety/security trade-offs, runtime risk decisions, or emergency operating modes in an OT-nexus as its **primary thesis** or **core focus**. It does not need to use the exact phrase "Dynamic Risk".
 * **MEDIUM:** The document discusses relevant cyber-physical concepts (e.g., ICS resilience, structural engineering, or emergency workflows) as its primary focus, but only mentions the direct safety vs. security override conflict or adaptive trade-offs tangentially or as a secondary point.
 * **LOW:** The document does not discuss physical safety, emergency operations, or OT/ICS environments. This includes standard IT cybersecurity frameworks (e.g., focused solely on data privacy, encryption, network firewalls, or financial fraud) or fields with zero life-safety/physical consequences.
-
-## 💻 Agent Operational Directives
-* **Platform-Agnostic Execution:** If the human user requests terminal execution or script modification, the AI MUST sense the local operating system and shell environment (e.g., PowerShell vs. Bash) before sending chained commands. Do not default to `&&` in Windows PowerShell; use `;` or execute them sequentially.

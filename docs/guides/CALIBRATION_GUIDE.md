@@ -13,7 +13,7 @@ To calibrate the pipeline:
 
 ## What to Adjust
 
-If the AI's output diverges from your manual coding, you will need to adjust your agent rule files (`.agent/rules/PROJECT_RULES.md` and `.agent/skills/auditor.md`). To help visualize how these rules fit together into the pipeline, refer to the [Agent Architecture Diagram](../AGENT_ARCHITECTURE.md). Focus your adjustments on the following areas:
+If the AI's output diverges from your manual coding, you will need to adjust your agent rule files (`.agent/rules/PROJECT_RULES.md` and `.agent/skills/auditor.md`). To help visualize how these rules fit together into the pipeline, refer to the [Agent Architecture Diagram](AGENT_ARCHITECTURE.md). Focus your adjustments on the following areas:
 
 * **Logic Dictionary:** Does the AI need more terms mapping to "Asset Security" or "Break-Glass" for your specific sector?
 * **Flags:** Is the AI over-applying or under-applying conflict flags like `[SYSTEMIC_OMISSION]`? Refine the definitions of the flags.
