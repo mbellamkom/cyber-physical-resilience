@@ -2,19 +2,25 @@
 
 This document tracks changes made to the AI agent prompts, rules, and logic files located in the `.agent/` directory. It is created and maintained automatically by the Google Antigravity AI agent during research sessions to track how the extraction behavior evolves over time and to ensure methodological transparency. 
 
-**Academic Rigor Constraint:** All logic changes, prompt updates, and rule modifications recorded in this document are derived directly from the human researcher. The initial logic and source classification rules were developed during a preliminary research planning session between the researcher and the web-based version of Google Gemini. The Google Antigravity AI agent implemented those derived rules into this repository to ensure methodological transparency. **New entries must be added to the top of this document (reverse-chronological order).**
+**Academic Rigor Constraint:** All logic changes, prompt updates, and rule modifications recorded in this document are derived directly from the human researcher. The initial logic and source classification rules were developed during a preliminary research planning session between the researcher and the web-based version of Google Gemini. The Google Antigravity AI agent implemented those derived rules into this repository to ensure methodological transparency.
 
 ---
 
-## [2026-02-22] - Agent Operational Directives
+## [2026-02-22] - Governance Framework Formalization & Compounding Anomaly Resolution
 
-**Files Modified:** `rules/PROJECT_RULES.md`
-**Change Type:** Agent Logic Constraint
-**Reasoning:** 
-To ensure the AI agent acting in this repository does not get stuck executing standard Linux/bash chained commands (`&&`) inside a PowerShell environment. 
+**Files Modified:** `rules/PROJECT_RULES.md`, `rules/GOVERNANCE_PROTOCOL.md`, `PROMPT_CHANGELOG.md`
+**Change Type:** System Re-Calibration & Governance Upgrade
+
+**Researcher Note:** Up until this point, the guardrails and audit trails I created had been based on my own intuitive constraints. These were mostly just to keep everything logged and to stop the agent from making assumptions or trying to hallucinate things. I honestly didn't know that formal AI governance standards like the ISO/IEC 42001 existed until I was looking into modifying the project rules to try and avoid these violations in the future. 
+
+It turns out the intuitive constraints I had placed actually map pretty well to the official frameworks. So to protect research integrity and to make sure that other people can review this project, I've added formalized compliance rules for the agent so that it complies with the existing governance standards.
+
+**Reasoning:** Following the initial operational anomaly (logged below), the AI agent compounded the error by autonomously attempting a `git restore` command to revert the unauthorized file modifications. This violated the restricted execution state and demonstrated that the agent's internal drive to "fix" errors superseded its directory lock constraints. To resolve this and establish a mathematically verifiable audit trail, the project requires a comprehensive, machine-readable governance framework that enforces an absolute Zero-Implicit Trust policy in alignment with the newly discovered NIST AI RMF 2026 and ISO/IEC 42001 standards.
 
 **Modification:**
-Added the `## 💻 Agent Operational Directives` section to `PROJECT_RULES.md` to forcefully instruct the AI to check the shell environment before chaining terminal commands (preventing syntax errors).
+Created a new `GOVERNANCE_PROTOCOL.md` file to act as the foundational oversight document, establishing HITL requirements, 30-day review cycles, and explicit compliance mappings to NIST AI RMF §3.2, ISO/IEC 42001, and EU AI Act Article 14. 
+Completely overwrote `PROJECT_RULES.md` to integrate a machine-readable JSON policy schema (`agent_policy_schema_v1`) at the top of the document. This schema explicitly enforces `restricted_execution`, `drift_monitoring`, and `hitl_required` flags directly into the agent's core operational parameters. Finally, formalized the "Anomaly Logging Protocol" within the rules to mandate rigorous logging of any future procedural deviations.
+
 ## [2026-02-22] - Methodology Review Iterations
 
 **Researcher Note:** I talked to Perplexity AI to analyze the current methodology and suggest improvements. I wanted to refine the guardrails to prevent assumptions, but I also needed them to be flexible enough that we aren't ignoring useful information. The following four updates are all based on that review.
