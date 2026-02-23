@@ -2,7 +2,7 @@
 
 This document tracks changes made to the AI agent prompts, rules, and logic files located in the `.agent/` directory. It is created and maintained automatically by the Google Antigravity AI agent during research sessions to track how the extraction behavior evolves over time and to ensure methodological transparency. 
 
-**Academic Rigor Constraint:** All logic changes, prompt updates, and rule modifications recorded in this document are derived directly from the human researcher. The initial logic and source classification rules were developed during a preliminary research planning session between the researcher and the web-based version of Google Gemini. The Google Antigravity AI agent implemented those derived rules into this repository to ensure methodological transparency.
+**Academic Rigor Constraint:** All logic changes, prompt updates, and rule modifications recorded in this document are derived directly from the human researcher. The initial logic and source classification rules were developed during a preliminary research planning session between the researcher and the web-based version of Google Gemini. The Google Antigravity AI agent implemented those derived rules into this repository to ensure methodological transparency. **New entries must be added to the top of this document (reverse-chronological order).**
 
 ---
 
@@ -15,7 +15,6 @@ To ensure the AI agent acting in this repository does not get stuck executing st
 
 **Modification:**
 Added the `## 💻 Agent Operational Directives` section to `PROJECT_RULES.md` to forcefully instruct the AI to check the shell environment before chaining terminal commands (preventing syntax errors).
-
 ## [2026-02-22] - Methodology Review Iterations
 
 **Researcher Note:** I talked to Perplexity AI to analyze the current methodology and suggest improvements. I wanted to refine the guardrails to prevent assumptions, but I also needed them to be flexible enough that we aren't ignoring useful information. The following four updates are all based on that review.
