@@ -110,6 +110,9 @@ To use it for a different project, you will need to replace the search terms in 
 ├── sources/             # Raw PDF storage for ingestion
 ├── audits/              # Generated Markdown notes
 ├── examples/            # Sample generated outputs
+├── docs/                # Project documentation and guides
+│   ├── AGENT_ARCHITECTURE.md # Diagram of the logic pipeline
+│   └── guides/          # Guides for calibration and custom domains
 └── .agent/    
     ├── PROMPT_CHANGELOG.md   # Logs changes to AI instructions for academic rigor
     ├── rules/           
@@ -122,4 +125,4 @@ To use it for a different project, you will need to replace the search terms in 
 ## 6. Getting Started
 If you are cloning this repository to run your own pipeline, please refer to the **[SETUP.md](./SETUP.md)** file for detailed instructions on required dependencies, environment configuration (`.env`), and how to run the components.
 
-Before running the pipeline at scale, it is highly recommended to conduct a calibration phase to ensure the AI's extraction logic perfectly aligns with your research domain. See the **[CALIBRATION_GUIDE.md](./CALIBRATION_GUIDE.md)** for instructions on this manual validation process.
+After setup, it is highly recommended to read the **[Agent Architecture Diagram](./docs/AGENT_ARCHITECTURE.md)** to understand the logic flow. Then, before running the pipeline at scale, conduct a calibration phase to ensure the AI's logic aligns with your domain. See the **[Calibration Guide](./docs/guides/CALIBRATION_GUIDE.md)** for instructions. If you are adapting this framework for a new domain, reference the **[Custom Domain Guide](./docs/guides/CUSTOM_DOMAIN_GUIDE.md)**.
