@@ -18,9 +18,26 @@ load_dotenv()
 RESEARCH_PATH = Path(os.getenv("RESEARCH_PATH") or ".")
 LOGS_DIR = RESEARCH_PATH / "logs"
 LOGS_DIR.mkdir(exist_ok=True)
+LOGS_DIR = RESEARCH_PATH / "logs"
+LOGS_DIR.mkdir(exist_ok=True)
 MEMORY_FILE = LOGS_DIR / "seen_sources.txt"
 REJECTED_LOG = LOGS_DIR / "rejected_sources.md"
 TRIAGE_LOG = LOGS_DIR / "triage_log.md"
+
+QUERY_CACHE = LOGS_DIR / "query_cache.json"
+
+# --- MASTER QUERIES FALLBACK ---
+# Used when both the cache is missing and the Gemini API is unavailable (e.g. 429).
+MASTER_SCHOLAR_QUERIES = [
+    '"critical infrastructure" AND ("safety over security" OR "life-safety") AND (ICS OR SCADA OR OT) AND cybersecurity',
+    '"break-glass" OR "emergency override" OR "fail-open" AND ("industrial control" OR "operational technology") AND (safety AND security)',
+    '(NIST OR ISO OR FEMA) AND "dynamic risk" AND ("cyber-physical" OR "resilience") AND ("emergency management" OR "disaster response")',
+]
+MASTER_DDG_QUERIES = [
+    'site:nist.gov "NIST 800-82" ("safety over security" OR "ICS cybersecurity guidance")',
+    'site:fema.gov "FEMA Lifelines" ("cyber dependency" OR "resilience planning") "critical infrastructure"',
+    'site:cisa.gov OR site:energy.gov ("OT security" OR "industrial control system safety") "risk management"',
+]
 
 WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 RULES_PATH = Path(os.getenv("AGENT_RULES_PATH", RESEARCH_PATH / ".agent" / "rules" / "PROJECT_RULES.md"))
@@ -43,6 +60,28 @@ def load_rules():
         with open(RULES_PATH, "r", encoding="utf-8") as f:
             return f.read()
     return "Evaluate this document for relevance."
+
+def load_query_cache():
+    """Loads cached queries from disk. Returns (scholar_queries, ddg_queries) or None."""
+    if not QUERY_CACHE.exists():
+        return None
+    try:
+        with open(QUERY_CACHE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        print(f"[*] Loaded query cache from {data.get('generated_on', 'unknown date')}.")
+        return data.get("scholar_queries", []), data.get("ddg_queries", [])
+    except Exception as e:
+        print(f"[!] Cache file is malformed, ignoring: {e}")
+        return None
+
+def save_query_cache(scholar_queries, ddg_queries):
+    """Persists generated queries to disk with a YYYY-MM-DD timestamp."""
+    QUERY_CACHE.parent.mkdir(parents=True, exist_ok=True)
+    today = datetime.datetime.now().strftime("%Y-%m-%d")
+    data = {"generated_on": today, "scholar_queries": scholar_queries, "ddg_queries": ddg_queries}
+    with open(QUERY_CACHE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+    print(f"[+] Query cache saved to {QUERY_CACHE}.")
 
 def is_new_discovery(link, refresh_days=30):
     """Checks memory file to avoid alerting on seen links."""
@@ -180,7 +219,7 @@ def process_batch(batch, rules_text):
 
 # --- GENAI CAPABILITIES ---
 def generate_queries(topics):
-    """Uses Gemini to brainstorm highly optimized search strings for both Scholar and general search engines."""
+    """Calls Gemini to brainstorm new query variants and saves the result to the query cache."""
     print("[+] Agent is brainstorming query variants...")
     prompt = f"""
     You are an expert research librarian. The user is researching the following topics: {topics}.
@@ -197,10 +236,14 @@ def generate_queries(topics):
         response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
         raw = response.text.replace('```json', '').replace('```', '').strip()
         data = json.loads(raw)
-        return data.get("scholar_queries", []), data.get("ddg_queries", [])
+        sq = data.get("scholar_queries", [])
+        dq = data.get("ddg_queries", [])
+        save_query_cache(sq, dq)
+        return sq, dq
     except Exception as e:
-        print(f"[!] Failed to generate or parse Agent queries: {e}")
-        return topics, topics
+        print(f"[!] Cloud brainstorm failed: {e}")
+        print("[!] Falling back to hardcoded Master Queries.")
+        return MASTER_SCHOLAR_QUERIES, MASTER_DDG_QUERIES
 
 def evaluate_snippet(title, snippet, rules_text):
     """Uses Gemini to read the search snippet and strictly score it against the Project Rules."""
@@ -312,19 +355,34 @@ def search_google(query, rules_text, limit=4):
     process_batch(batch, rules_text)
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Scout Agent: Cyber-Physical Resilience Research Pipeline")
+    parser.add_argument("--refresh", action="store_true",
+                        help="Bypass the local cache and force a new Gemini API brainstorm.")
+    args = parser.parse_args()
+
     rules = load_rules()
     topics_env = os.getenv("RESEARCH_TOPICS", "NIST 800-82 safety over security, FEMA Lifelines Cyber Dependency")
     topics_list = [t.strip() for t in topics_env.split(",") if t.strip()]
-    
-    # AI Generation Phase
-    scholar_queries, ddg_queries = generate_queries(topics_list)
-    
+
+    # --- QUERY RESOLUTION: Cache -> Cloud -> Hardcoded Fallback ---
+    if args.refresh:
+        print("[*] --refresh flag detected. Bypassing cache and requesting new queries.")
+        scholar_queries, ddg_queries = generate_queries(topics_list)
+    else:
+        cached = load_query_cache()
+        if cached:
+            scholar_queries, ddg_queries = cached
+        else:
+            print("[*] No query cache found. Requesting queries from Cloud Agent.")
+            scholar_queries, ddg_queries = generate_queries(topics_list)
+
     print("[=] Executing Pluggable Hybrid Search...")
-    
+
     # Academic Pass
     for sq in scholar_queries:
         search_scholar(sq, rules)
-        
+
     # Grey Literature Pass
     for dq in ddg_queries:
         search_ddg(dq, rules)
