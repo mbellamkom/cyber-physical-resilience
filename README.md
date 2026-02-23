@@ -41,6 +41,12 @@ To evaluate how different global frameworks (like NIST, ISO, and FEMA) handle th
 * **Search Tools:** `scholarly` for Google Scholar academic papers, and `ddgs` for general web/grey literature.
 * **Notifications:** Discord Webhooks for real-time human-in-the-loop review alerts.
 
+### Tech Stack & Models
+* **AI Models:** Google Gemini (via `google-genai` API) for both discovery reasoning and technical extraction.
+* **Vector Database:** Qdrant (`qdrant-client`) for local, disk-persistent document embeddings and memory.
+* **Search Tools:** `scholarly` for Google Scholar academic papers, and `ddgs` for general web/grey literature.
+* **Notifications:** Discord Webhooks for real-time human-in-the-loop review alerts.
+
 ---
 
 ## 2. The Automation Pipeline
