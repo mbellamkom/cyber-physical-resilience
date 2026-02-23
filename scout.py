@@ -1,15 +1,17 @@
 import os
+import re
 import time
 import json
+import uuid
 import datetime
+import requests
 from pathlib import Path
 from dotenv import load_dotenv
 from scholarly import scholarly
-from ddgs import DDGS
-import requests
+from duckduckgo_search import DDGS
 from discord_webhook import DiscordWebhook
 from google import genai
-from googlesearch import search as google_search
+from qdrant_client import QdrantClient, models
 
 # Load environment variables
 load_dotenv()
@@ -25,6 +27,13 @@ REJECTED_LOG = LOGS_DIR / "rejected_sources.md"
 TRIAGE_LOG = LOGS_DIR / "triage_log.md"
 
 QUERY_CACHE = LOGS_DIR / "query_cache.json"
+
+# --- QDRANT / LOCAL RAG CONFIG ---
+QDRANT_PATH = os.getenv("QDRANT_LOCAL_PATH", str(RESEARCH_PATH / ".qdrant_db"))
+TRIAGE_COLLECTION = "triage_memory"
+OLLAMA_URL = "http://localhost:11434"
+EMBED_MODEL = "nomic-embed-text"  # 768-dim, matches global_resilience_vault
+VECTOR_SIZE = 768
 
 # --- MASTER QUERIES FALLBACK ---
 # Used when both the cache is missing and the Gemini API is unavailable (e.g. 429).
@@ -82,6 +91,64 @@ def save_query_cache(scholar_queries, ddg_queries):
     with open(QUERY_CACHE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
     print(f"[+] Query cache saved to {QUERY_CACHE}.")
+
+# --- LOCAL RAG HELPERS ---
+
+def init_triage_collection():
+    """Lazy-initializes the triage_memory Qdrant collection."""
+    qdrant = QdrantClient(path=QDRANT_PATH)
+    try:
+        qdrant.get_collection(TRIAGE_COLLECTION)
+    except Exception:
+        qdrant.create_collection(
+            collection_name=TRIAGE_COLLECTION,
+            vectors_config=models.VectorParams(size=VECTOR_SIZE, distance=models.Distance.COSINE)
+        )
+    return qdrant
+
+def embed_text(text):
+    """Generates a local embedding via Ollama nomic-embed-text."""
+    try:
+        resp = requests.post(
+            f"{OLLAMA_URL}/api/embeddings",
+            json={"model": EMBED_MODEL, "prompt": text},
+            timeout=30
+        )
+        if resp.status_code == 200:
+            return resp.json().get("embedding")
+    except Exception as e:
+        print(f"[!] Embedding failed: {e}")
+    return None
+
+def ingest_triage_logs(qdrant):
+    """Parses triage_log.md and rejected_sources.md and upserts recent entries into triage_memory."""
+    entries = []
+    for log_file in [TRIAGE_LOG, REJECTED_LOG]:
+        if not log_file.exists():
+            continue
+        with open(log_file, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("- **["):  # formatted log entry
+                    entries.append(line)
+
+    if not entries:
+        print("[*] No triage log entries to ingest.")
+        return
+
+    points = []
+    for entry in entries[-50:]:  # cap at 50 most recent
+        vector = embed_text(entry)
+        if vector:
+            points.append(models.PointStruct(
+                id=str(uuid.uuid4()),
+                vector=vector,
+                payload={"text": entry}
+            ))
+
+    if points:
+        qdrant.upsert(collection_name=TRIAGE_COLLECTION, points=points)
+        print(f"[+] Ingested {len(points)} triage entries into '{TRIAGE_COLLECTION}'.")
 
 def is_new_discovery(link, refresh_days=30):
     """Checks memory file to avoid alerting on seen links."""
@@ -219,31 +286,69 @@ def process_batch(batch, rules_text):
 
 # --- GENAI CAPABILITIES ---
 def generate_queries(topics):
-    """Calls Gemini to brainstorm new query variants and saves the result to the query cache."""
-    print("[+] Agent is brainstorming query variants...")
-    prompt = f"""
-    You are an expert research librarian. The user is researching the following topics: {topics}.
-    Generate exactly 3 highly optimized boolean search queries tailored for Google Scholar (focused on peer-reviewed rigorous data).
-    Generate exactly 3 general web search queries (using search operators like `site:gov`, `site:iso.org`, or targeted natural language) to discover "Grey Literature" whitepapers. Do not use `filetype:pdf` as it triggers anti-bot protections.
-    
-    Output strictly as valid JSON:
-    {{
-        "scholar_queries": ["query1", "query2", "query3"],
-        "ddg_queries": ["query4", "query5", "query6"]
-    }}
-    """
+    """Queries triage_memory for RAG context and prompts local deepseek-r1:8b to generate search queries."""
     try:
-        response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
-        raw = response.text.replace('```json', '').replace('```', '').strip()
-        data = json.loads(raw)
-        sq = data.get("scholar_queries", [])
-        dq = data.get("ddg_queries", [])
-        save_query_cache(sq, dq)
-        return sq, dq
+        qdrant = init_triage_collection()
+        ingest_triage_logs(qdrant)
+
+        # Retrieve the 5 most relevant high-signal findings for context
+        query_vector = embed_text("high-signal safety security life-safety OT ICS silent anomaly")
+        context_snippets = []
+        if query_vector:
+            hits = qdrant.search(
+                collection_name=TRIAGE_COLLECTION,
+                query_vector=query_vector,
+                limit=5
+            )
+            context_snippets = [h.payload.get("text", "") for h in hits]
+
+        context_block = "\n".join(context_snippets) if context_snippets else "No prior triage data available."
+
+        print("[+] Agent is brainstorming query variants...")
+        prompt = f"""You are a research assistant for a cyber-physical resilience study.
+Based on recent triage findings, generate new search queries to expand coverage.
+
+RECENT FINDINGS:
+{context_block}
+
+TASK:
+Generate exactly 3 boolean search queries for Google Scholar and 3 web queries for government grey literature.
+Focus on gaps in the findings: if logs show silence on life-safety in NIST, search maritime or energy-specific ICS codes.
+
+Output ONLY valid JSON with no extra text:
+{{
+    "scholar_queries": ["query1", "query2", "query3"],
+    "ddg_queries": ["query4", "query5", "query6"]
+}}"""
+
+        resp = requests.post(
+            f"{OLLAMA_URL}/api/generate",
+            json={"model": "deepseek-r1:8b", "prompt": prompt,
+                  "stream": False, "format": "json"},
+            timeout=120
+        )
+
+        if resp.status_code == 200:
+            raw_response = resp.json().get("response", "")
+            # Mandatory: scrub DeepSeek <think>...</think> blocks before parsing
+            cleaned = re.sub(r'<think>.*?</think>', '', raw_response, flags=re.DOTALL).strip()
+            try:
+                data = json.loads(cleaned)
+                sq = data.get("scholar_queries", [])
+                dq = data.get("ddg_queries", [])
+                if sq and dq:
+                    save_query_cache(sq, dq)
+                    return sq, dq
+                print("[!] Local model returned empty query lists.")
+            except json.JSONDecodeError as e:
+                print(f"[!] JSON parse failed: {e}")
+                print(f"[!] Raw response snippet: {cleaned[:200]}")
+
     except Exception as e:
-        print(f"[!] Cloud brainstorm failed: {e}")
-        print("[!] Falling back to hardcoded Master Queries.")
-        return MASTER_SCHOLAR_QUERIES, MASTER_DDG_QUERIES
+        print(f"[!] Local brainstorm failed: {e}")
+
+    print("[!] Falling back to hardcoded Master Queries.")
+    return MASTER_SCHOLAR_QUERIES, MASTER_DDG_QUERIES
 
 def evaluate_snippet(title, snippet, rules_text):
     """Uses Gemini to read the search snippet and strictly score it against the Project Rules."""
