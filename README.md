@@ -46,14 +46,17 @@ Reading hundreds of technical frameworks, academic papers, incident reports, and
 
 The workflow is broken into three steps:
 
-* **Step 1: Discovery (`scout.py`)** A **Pluggable Hybrid AI Agent**. Instead of passively scraping, it uses Gemini to dynamically brainstorm optimized search queries based on your broad research topics. It casts a wide net, evaluating peer-reviewed papers via **Google Scholar** and [grey literature](https://en.wikipedia.org/wiki/Grey_literature) (whitepapers, government directives, etc.) via **DuckDuckGo**. The agent reads title snippets and abstracts, rigorously scoring them against the `PROJECT_RULES.md` before sending high-quality hits to Discord for manual review. It maintains a smart memory and logs low-quality hits for future auditing.
+* **Step 1: Discovery (`scout.py`)** A **Tiered Triage AI Pipeline**. Instead of passively scraping, it uses Gemini to dynamically brainstorm optimized search queries. It then casts a wide net via **Google Scholar** and **DuckDuckGo** and processes snippets through a 3-stage, zero-cost scaling architecture:
+    1. **The Python Sieve:** Instantly discards snippets lacking foundational project keywords via lexical analysis (zero API cost).
+    2. **The Local Bouncer:** Batches surviving snippets into a local `deepseek-r1` instance (via Ollama) to broadly catch safety/security edge cases and SILENT_ANOMALY IT-documents.
+    3. **The Cloud Specialist:** Only the highest-signal snippets are finally passed to `gemini-2.5-flash` for rigorous `PROJECT_RULES.md` scoring and Discord dispatch.
   > ![Scout Discord Output](./screenshots/scout_discord_with_agent_reasoning.png)
   > 
   > **🏛️ Architecture Note (Decoupled Pipeline):**  
   > Discovery (`scout.py`) and Auditing (`librarian.py`) are deliberately kept **strictly decoupled**. Scout does *not* automatically download PDFs. This "Human-in-the-Loop" architecture empowers the researcher to manually source PDFs from paywalled, physical, or university-restricted library catalogs that the automated scraper cannot access, dropping them freely into the `sources/` pipeline. This basically lets us add sources from places that the scout does not have access to. Also this is done so you can further validate the sources before doing the technical extraction.
   > 
   > **🏛️ Architecture Note (Reproducible Memory):**  
-  > The Scout's "smart memory" log (`seen_sources.txt`) is intentionally tracked via Git in this repository. This provides a mathematically auditable, transparent history of every search query executed and every document the AI rejected as `LOW` relevance, guaranteeing the dataset collection methodology is academically reproducible.
+  > The Scout's "smart memory" and triage reasoning logs (stored in the `/logs/` directory) are intentionally tracked via Git. This provides a mathematically auditable, transparent history of every search query executed and every document the models rejected as `LOW` relevance, guaranteeing the dataset collection methodology is academically reproducible.
   
 * **Step 2: Technical Extraction (`librarian.py`)** A script that uses an AI model (Gemini) to read the downloaded PDFs. Instead of generating general summaries, the AI is programmed to extract specific decision models, safety triggers, and framework rules. It saves these notes as clean Markdown text files.
   > *(See an example of an AI-generated report in [examples/NIST.SP.800-53r5_audit.md](./examples/NIST.SP.800-53r5_audit.md))*
@@ -104,7 +107,10 @@ To use it for a different project, you will need to replace the search terms in 
 ├── LICENSE              # MIT Open-Source License
 ├── scout.py             # Discovery & Smart Memory script
 ├── librarian.py         # AI Auditor script
-├── seen_sources.txt     # The Scout's memory log
+├── logs/                # System memory and rejection reasoning logs
+│   ├── seen_sources.txt 
+│   ├── rejected_sources.md
+│   └── triage_log.md
 ├── .env                 # API Keys & Path Configs
 ├── sources/             # Raw PDF storage for ingestion
 ├── audits/              # Generated Markdown notes
