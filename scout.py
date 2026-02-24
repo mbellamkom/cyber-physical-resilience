@@ -295,16 +295,16 @@ def generate_queries(topics):
         query_vector = embed_text("high-signal safety security life-safety OT ICS silent anomaly")
         context_snippets = []
         if query_vector:
-            hits = qdrant.search(
+            result = qdrant.query_points(
                 collection_name=TRIAGE_COLLECTION,
-                query_vector=query_vector,
+                query=query_vector,
                 limit=5
             )
-            context_snippets = [h.payload.get("text", "") for h in hits]
+            context_snippets = [h.payload.get("text", "") for h in result.points]
 
         context_block = "\n".join(context_snippets) if context_snippets else "No prior triage data available."
 
-        print("[+] Agent is brainstorming query variants...")
+        print("[+] Initializing Local Brainstorming (DeepSeek-R1)...")
         prompt = f"""You are a research assistant for a cyber-physical resilience study.
 Based on recent triage findings, generate new search queries to expand coverage.
 
@@ -313,7 +313,10 @@ RECENT FINDINGS:
 
 TASK:
 Generate exactly 3 boolean search queries for Google Scholar and 3 web queries for government grey literature.
-Focus on gaps in the findings: if logs show silence on life-safety in NIST, search maritime or energy-specific ICS codes.
+Focus on gaps related to 'Safety over Security' and life-safety engineering principles across ALL critical
+infrastructure and OT environments — including but not limited to energy, water, maritime, rail, healthcare,
+and manufacturing. Identify under-explored sectors or regulatory frameworks that do not adequately address
+the intersection of engineering safety and cybersecurity.
 
 Output ONLY valid JSON with no extra text:
 {{
@@ -351,36 +354,33 @@ Output ONLY valid JSON with no extra text:
     return MASTER_SCHOLAR_QUERIES, MASTER_DDG_QUERIES
 
 def evaluate_snippet(title, snippet, rules_text):
-    """Uses Gemini to read the search snippet and strictly score it against the Project Rules."""
-    prompt = f"""
-    You are an AI Librarian strictly enforcing the project rules.
-    Evaluate the following search result title and abstract snippet for relevance to our research parameters.
-    
-    PROJECT RULES:
-    {rules_text}
-    
-    ADDITIONAL RULE:
-    The user only wants English sources. If the title or snippet is primarily in a language other than English, immediately score it as LOW relevance with the rationale "Non-English source."
-    
-    SEARCH SNIPPET:
-    Title: {title}
-    Snippet: {snippet}
-    
-    Evaluate strictly. Read the "Scout Agent Scoring Criteria" section from the Project Rules above. 
-    Does this snippet meet the HIGH, MEDIUM, LOW, or IGNORE definition?
-    Output strictly as valid JSON:
-    {{
-        "relevance": "HIGH" or "MEDIUM" or "LOW" or "IGNORE",
-        "rationale": "One concise sentence explaining why it passed or failed based on the rules."
-    }}
-    """
+    """Uses local DeepSeek-R1 via Ollama to screen a snippet with a strict boolean filter."""
+    print(f"  [*] Using Local DeepSeek-R1 for Evaluation...")
+    prompt = f"""Does this text discuss life-safety, fail-safe mechanisms, or the intersection of engineering safety and cybersecurity in industrial/OT environments?
+Respond ONLY with \"YES\" or \"NO\", followed by a one-sentence technical reason.
+
+Title: {title}
+Snippet: {snippet}"""
     try:
-        # 10s wait logic is now before the call in process_batch to avoid global delays
-        response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
-        raw = response.text.replace('```json', '').replace('```', '').strip()
-        return json.loads(raw)
+        resp = requests.post(
+            f"{OLLAMA_URL}/api/generate",
+            json={"model": "deepseek-r1:8b", "prompt": prompt, "stream": False},
+            timeout=60
+        )
+        if resp.status_code == 200:
+            raw = resp.json().get("response", "")
+            # Scrub DeepSeek <think>...</think> blocks
+            cleaned = re.sub(r'<think>.*?</think>', '', raw, flags=re.DOTALL).strip()
+            first_line = cleaned.splitlines()[0].strip() if cleaned else ""
+            answer = first_line[:3].upper()
+            rationale = cleaned[len(first_line):].strip() or first_line
+            if answer.startswith("YES"):
+                return {"relevance": "HIGH", "rationale": rationale}
+            else:
+                return {"relevance": "LOW", "rationale": rationale}
     except Exception as e:
-        return {"relevance": "LOW", "rationale": f"Gemini API or Parse error: {e}"}
+        print(f"[!] Local evaluation failed: {e}")
+    return {"relevance": "LOW", "rationale": "Local model unavailable."}
 
 # --- SEARCH ENGINES ---
 

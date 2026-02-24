@@ -14,15 +14,15 @@ load_dotenv()
 
 # Setup paths from environment variables
 RESEARCH_PATH = Path(os.getenv("RESEARCH_PATH", "."))
-SOURCE_DIR = Path(os.getenv("SOURCE_DIR", "sources"))
+SOURCE_DIR = Path(os.getenv("SOURCES_LOCAL_PATH", os.getenv("SOURCE_DIR", str(RESEARCH_PATH / "sources"))))
 AUDIT_DIR = RESEARCH_PATH / "audits"
-ARCHIVE_DIR = Path(os.getenv("ARCHIVE_DIR", "archive"))
+ARCHIVE_DIR = Path(os.getenv("ARCHIVE_DIR", str(RESEARCH_PATH / "archive")))
 
 # Initialize the Gemini GenAI Client
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 # Initialize Qdrant Client
-qdrant_path = os.getenv("QDRANT_LOCAL_PATH", ".qdrant_db")
+qdrant_path = os.getenv("QDRANT_LOCAL_PATH", str(RESEARCH_PATH / ".qdrant_db"))
 qdrant = QdrantClient(path=qdrant_path)
 COLLECTION_NAME = "global_resilience_vault"
 
