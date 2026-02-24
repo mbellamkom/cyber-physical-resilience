@@ -1,0 +1,13 @@
+{
+  "generated_on": "2026-02-23",
+  "scholar_queries": [
+    "((NIST AND resilience) OR (NIST AND cyber-physical)) AND (ICS OR industrial control systems) AND (life-safety)",
+    "((NIST SP 800- something) OR (NIST guidelines)) AND (ICS OR industrial control systems) AND (life-safety)",
+    "((maritime OR energy) OR (energy sector)) AND (ICS OR industrial control systems) AND (code OR standard) AND (life-safety)"
+  ],
+  "ddg_queries": [
+    "life-safety standards for ICS in maritime industry",
+    "life-safety requirements for energy sector ICS systems",
+    "national standards for life-safety in ICS for critical infrastructure"
+  ]
+}
