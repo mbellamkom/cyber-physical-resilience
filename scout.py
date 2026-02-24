@@ -381,15 +381,28 @@ def python_sieve(title, snippet):
 def evaluate_with_ollama(snippets_bulk):
     """Sends a batch of snippets to local DeepSeek."""
     prompt = f"""
-You are an expert triage assistant. Your goal is to evaluate these search snippets and identify the nexus between cybersecurity and physical safety/OT. If a document focuses solely on IT-standard data security while ignoring physical impact, score it LOW.
-If it explicitly mentions major frameworks (NIST, ISO) but is completely silent on physical safety/OT-nexus, score it SILENT_ANOMALY.
+You are a research triage assistant for a study on Dynamic Risk Management in cyber-physical systems.
+Evaluate each search snippet using the following STRICT scoring rules:
+
+SCORING RULES:
+- HIGH (Positive Baseline): The document explicitly discusses the tension between safety and security,
+  system overrides, emergency access, fail-safe/fail-open behaviors, or dynamic risk management in
+  an OT/ICS or cyber-physical context as its PRIMARY focus.
+- HIGH (Negative Baseline - STRUCTURAL_OMISSION): The document is a major framework, standard, or
+  regulatory instrument governing OT/ICS or cyber-physical systems that is COMPLETELY SILENT on
+  human life-safety, emergency egress, or physical consequences. These are valuable as evidence of
+  governance gaps. Flag rationale with [STRUCTURAL_OMISSION].
+- MEDIUM: The document discusses ICS resilience, emergency workflows, or cyber-physical operations
+  but only mentions safety vs. security overrides tangentially or as a secondary point.
+- LOW: The document addresses only IT-standard data security (data privacy, encryption, firewalls,
+  financial fraud) with zero physical safety or OT/ICS relevance.
 
 SNIPPETS:
-{json.dumps([{"index": i, "title": s["title"], "snippet": s["snippet"]} for i, s in enumerate(snippets_bulk)], indent=2)}
+{json.dumps([{{"index": i, "title": s["title"], "snippet": s["snippet"]}} for i, s in enumerate(snippets_bulk)], indent=2)}
 
 Evaluate each snippet. Output your answer as a JSON object with a single key "results" containing an array:
 {{"results": [
-  {{"index": 0, "relevance": "HIGH" or "MEDIUM" or "LOW" or "SILENT_ANOMALY", "rationale": "One concise sentence."}}
+  {{"index": 0, "relevance": "HIGH" or "MEDIUM" or "LOW", "rationale": "One concise sentence. Prefix with [STRUCTURAL_OMISSION] if applicable."}}
 ]}}
 """
     try:
