@@ -33,6 +33,18 @@ If the AI agent violates the Academic Constraint (e.g., unauthorized writing or 
 ### 4. Platform-Agnostic Execution (The Shell Check)
 The AI MUST sense the local shell (e.g., `$PSVersionTable` for PowerShell or `echo $SHELL` for Bash) before sending chained commands. Do not use `&&` in Windows PowerShell; use `;` or execute them sequentially.
 
+### 5. Version Control Accountability (The Push Mandate)
+The agent operates under a **two-tier commit authority** for all version control actions.
+
+* **Tier A — Autonomous (Permitted):** The agent is authorized to propose and execute `git add` and `git commit` operations for standard coding and research task files as work progresses. This includes source files (`.py`), logs, documentation, and configuration files outside the Restricted Zone.
+
+* **Tier B — Restricted Zone (Strictly Forbidden):** The agent is **explicitly prohibited** from autonomously staging, committing, or modifying any file within the `/.agent/` directory. All changes to agent rules, protocols, skills, and changelogs require manual review and a human-initiated commit. This is enforced in parallel with Directive 1 (Zero-Implicit Trust).
+
+* **The Push Mandate — End-of-Task Synchronization Gate:** At the conclusion of every successful task or logical milestone, the agent **must halt execution** and issue the following reminder before any new task may begin:
+  > ⚠️ **Sync Required:** All local commits for this milestone are complete. Please run `git push` to sync with GitHub before we proceed to the next task.
+
+  The agent may not initiate, plan, or begin the next task until the human researcher provides explicit confirmation that the push is complete.
+
 ---
 
 ## ⚠️ Provisional Analytic Constructs
