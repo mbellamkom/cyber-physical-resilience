@@ -6,6 +6,57 @@ This document tracks changes made to the AI agent prompts, rules, and logic file
 
 ---
 
+## [2026-02-24] - Terminology Cleanup: Removal of [SYSTEMIC_NEGLIGENCE] & Formatting Repair
+
+**Files Modified:** `.agent/rules/PROJECT_RULES.md`, `.agent/PROMPT_CHANGELOG.md`
+**Change Type:** Terminology Cleanup & Document Integrity Repair
+**Authorization:** Researcher-approved via explicit `APPROVED` keyword per Directive 1 (Zero-Implicit Trust). Change proposed in chat and reviewed before any write operation.
+
+**Reasoning:**
+Two issues were resolved in a single authorized write:
+
+1. **[SYSTEMIC_NEGLIGENCE] Removal:** The flag was a predecessor concept for the same structural gap now formally covered by `🚩 [STRUCTURAL_OMISSION]`. Retaining both created semantic ambiguity — an evaluating agent could legitimately apply either flag to the same document, producing inconsistent scoring. With `[STRUCTURAL_OMISSION]` now precisely defined (including its distinction from `[OUT_OF_SCOPE_SILENCE]` and its negative-baseline retention logic), `[SYSTEMIC_NEGLIGENCE]` is redundant and was removed.
+
+2. **Formatting Repair:** During the researcher's manual copy-paste to recover from an accidental deletion, extra blank lines were injected between every line of the document. The most critical damage was to the Logic Dictionary markdown table — blank lines between table rows break the table renderer entirely, turning it into a set of unformatted text lines. The file was rewritten to the clean, compact format to restore correct rendering.
+
+> Researcher Note: The AI did not tell me that the copy/paste had blank lines, but since I can see its thoughts in the Antigravity IDE, I was able to catch that and ask the AI to fix.
+**Modification:**
+- Removed the `🚩 [SYSTEMIC_NEGLIGENCE]` bullet from `## 🚩 Audit Terminology & Resilience Flags`
+- Restored compact whitespace throughout the document (single blank lines between sections, no blank lines within tables or JSON blocks)
+- Fixed leading space on the ` ```json` fence (line 5) that could disrupt YAML frontmatter parsing
+- All logic, content, and flags (including `[STRUCTURAL_OMISSION]`) are unchanged
+
+---
+
+## [2026-02-24] - Scoring Logic Refinement: STRUCTURAL_OMISSION Flag & Negative Baseline Capture
+
+**Files Modified:** `.agent/rules/PROJECT_RULES.md`, `scout.py`
+**Change Type:** Logic Refinement — Scoring Criteria Expansion
+**Authorization:** Researcher-approved via explicit `APPROVED` keyword per Directive 1 (Zero-Implicit Trust). Proposed text reviewed in chat prior to any write operation.
+
+**Reasoning:**
+The original HIGH scoring criteria discarded documents that focused heavily on OT/ICS/cyber-physical environments but did not mention life-safety or emergency overrides. This created a critical gap: major governance frameworks (e.g., ICS cybersecurity standards) that are *completely silent* on physical safety were being dropped as LOW rather than captured as negative baselines. For a study of Dynamic Risk Management, these structural omissions are primary evidence of the governance gap being researched.
+
+**Modifications:**
+
+1. **New Audit Flag — `🚩 [STRUCTURAL_OMISSION]`** added to `## 🚩 Audit Terminology & Resilience Flags` in `PROJECT_RULES.md`:
+   - Defined as a framework governing OT/ICS or cyber-physical systems that contains zero explicit acknowledgment of human life-safety, emergency egress, or physical consequence, despite governing systems capable of causing bodily harm.
+   - Distinguished from `🟡 [OUT_OF_SCOPE_SILENCE]` (where safety is genuinely outside scope) — STRUCTURAL_OMISSION applies when safety *should* be in scope.
+   - These documents are retained as **negative baselines**.
+
+2. **Revised HIGH Scoring Criteria** in `## 📊 Scout Agent Scoring Criteria` in `PROJECT_RULES.md`:
+   - Expanded from a single condition to two explicit conditions:
+     - **(1) Positive Baseline:** Document's primary thesis is the safety-vs-security override conflict in an OT-nexus (unchanged).
+     - **(2) Negative Baseline — STRUCTURAL_OMISSION:** Major OT/ICS framework completely silent on life-safety. Score HIGH, flag rationale with `[STRUCTURAL_OMISSION]`.
+
+3. **Bouncer Prompt Update** in `scout.py` (`evaluate_with_ollama()`):
+   - Replaced the single-rule scoring instruction with the full two-condition HIGH rule.
+   - Removed `SILENT_ANOMALY` as a return value (now folded into HIGH/STRUCTURAL_OMISSION).
+   - Added explicit instruction to prefix rationale with `[STRUCTURAL_OMISSION]` when applicable.
+
+---
+
+
 ## [2026-02-23] - ⚠️ OPERATIONAL ANOMALY: Implicit Multi-File Authorization
 
 **Anomaly Type:** Directive 1 Violation (Zero-Implicit Trust)
