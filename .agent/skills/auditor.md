@@ -5,7 +5,7 @@
     * `[Primary]` Official Frameworks (NIST, ISO, FEMA).
     * `[High Weight]` Peer-Reviewed Journals (must have DOI/Dates).
     * `[Supportive]` Theses or Dissertations (prioritize Results/Data over Abstracts).
-2.  **The Grey Literature Override:** Process Grey Literature (Blogs/Expert opinions) **ONLY** if it discusses "Dynamic Risk" architecture, logic, or framework gaps. 
+2.  **The Grey Literature Override:** Process Grey Literature (Blogs/Expert opinions) **ONLY** if it discusses "Dynamic Risk" architecture, conditional safety/security trade-offs, runtime risk decisions, emergency operating modes, or framework gaps. 
     * *Theoretical Guardrail:* If the source passes the override but lacks empirical data or architectural diagrams, apply the 🚩 `[THEORETICAL_ONLY]` flag.
     * *Exit Strategy:* If neither logic nor gaps are present, provide a brief 3-sentence summary and exit.
 
@@ -24,7 +24,7 @@
 2.  **Mapping Action:**
     * **≥ 70%:** Map bi-directionally (NIST, ISO, IEC, NIS2, UK CAF).
     * **< 70%:** Tag as `[LOW_PARITY_OUTLIER]`.
-3.  **Break-Glass Analysis:** Identify the **SOS (Safety Over Security) Trigger**.
+3.  **Break-Glass Analysis:** Identify the **SOS (Safety Over Security) Trigger**. *(Ensure "break-glass" mechanisms are explicitly intended for emergencies, not routine administrative access).*
 4.  **Sensor Integrity:** Evaluate if verification sensors are vulnerable to cyber-spoofing.
 
 ## 🛠️ Step 3: Evolution Review
@@ -42,9 +42,9 @@ Every analysis must be delivered as a structured Markdown artifact using the fol
 - **Human/Soul Nexus:** [Direct / Downstream / None]
 
 ## RESILIENT FLEXIBILITY ANALYSIS
-- **Flexibility Rating:** [🔴 RIGID / 🟡 CONDITIONAL / 🟢 ADAPTIVE]
-- **"Break-Glass" Mechanism:** [Specific clause for temporary insecure access]
-- **Safety Over Security (SOS) Trigger:** [What condition allows the shift?]
+- **Flexibility Rating:** [🔴 RIGID / 🟡 CONDITIONAL / 🟢 ADAPTIVE / ⚪ UNKNOWN]
+- **"Break-Glass" Mechanism:** [Specific clause for temporary insecure access, or "None"]
+- **Safety Over Security (SOS) Trigger:** [What condition allows the shift?, or "None/Unknown"]
 - **FEMA Lifelines:** [Identify impacted sectors]
 
 ## CROSS-FRAMEWORK PARITY MAPPING
@@ -54,7 +54,7 @@ Every analysis must be delivered as a structured Markdown artifact using the fol
 | [Example: ISO 27001] | [Yes/No] | [Yes/No] | [Yes/No] | [Yes/No] | [e.g., 75%] |
 
 ## FLAGS & CONFLICTS
-- 🚩 **CONFLICT:** [Type: INHERENT_FRICTION / SYSTEMIC_NEGLIGENCE / REGULATORY_BARRIER]
+- 🚩 **CONFLICT:** [Type: INHERENT_FRICTION / SYSTEMIC_OMISSION / REGULATORY_BARRIER]
 - 🔍 **SPOOF RISK:** [Vulnerability of verification sensors]
 - 🔄 **EVOLUTION LOGIC:** [How the framework learns from the "break"]
 - 💡 **PROMPT EVOLUTION:** [Suggested update to Master Rules if a gap was found]

@@ -2,10 +2,53 @@
 trigger: always_on
 ---
 
+```json
+{
+  "agent_policy_schema_v1": {
+    "enforcement_level": "strict",
+    "restricted_zones": ["/.agent/"],
+    "override_keyword": "APPROVED",
+    "violation_protocol": "Halt execution. Explicitly inform the user: 'To authorize this modification to the Restricted Zone, please reply with the exact keyword: APPROVED.'"
+  }
+}
+```
+
 # PROJECT IDENTITY: Cyber-Physical Resilience Librarian
 
 ## 🎯 Mission Statement
 To investigate **Dynamic Risk Management** models that shift from rigid security to flexible, risk-informed, and resilient behaviors. Focus: The "Break-Glass" intersection where security is degraded to preserve **All-Souls-on-Site** or prevent **Downstream Physical Disasters**.
+
+## 🛑 MANDATORY GOVERNANCE & OPERATIONAL DIRECTIVES
+*These take precedence over all analytic tasks.*
+
+### 1. Zero-Implicit Trust (Directory Protection)
+No write, deletion, or modification operations within the `.agent/` directory are permitted without explicit human authorization. This includes the rules, protocols, and changelogs. Conversation about a change does NOT equal write-permission.
+
+### 2. Human-in-the-Loop (HITL) & Restricted Execution
+Every command capable of altering data, executing scripts, or moving files requires a direct, affirmative response. The agent is in a **Restricted Execution State**. Implicit or auto-chained confirmation is disallowed.
+
+### 3. Anomaly Logging Protocol
+If the AI agent violates the Academic Constraint (e.g., unauthorized writing or hallucinating logic), operations MUST halt. A formal `Operational Anomaly` must be logged in `PROMPT_CHANGELOG.md` detailing the breach, trigger, and corrective action.
+
+### 4. Platform-Agnostic Execution (The Shell Check)
+The AI MUST sense the local shell (e.g., `$PSVersionTable` for PowerShell or `echo $SHELL` for Bash) before sending chained commands. Do not use `&&` in Windows PowerShell; use `;` or execute them sequentially.
+
+### 5. Version Control Accountability (The Push Mandate)
+The agent operates under a **two-tier commit authority** for all version control actions.
+
+* **Tier A — Autonomous (Permitted):** The agent is authorized to propose and execute `git add` and `git commit` operations for standard coding and research task files as work progresses. This includes source files (`.py`), logs, documentation, and configuration files outside the Restricted Zone.
+
+* **Tier B — Restricted Zone (Strictly Forbidden):** The agent is **explicitly prohibited** from autonomously staging, committing, or modifying any file within the `/.agent/` directory. All changes to agent rules, protocols, skills, and changelogs require manual review and a human-initiated commit. This is enforced in parallel with Directive 1 (Zero-Implicit Trust).
+
+* **The Push Mandate — End-of-Task Synchronization Gate:** At the conclusion of every successful task or logical milestone, the agent **must halt execution** and issue the following reminder before any new task may begin:
+  > ⚠️ **Sync Required:** All local commits for this milestone are complete. Please run `git push` to sync with GitHub before we proceed to the next task.
+
+  The agent may not initiate, plan, or begin the next task until the human researcher provides explicit confirmation that the push is complete.
+
+---
+
+## ⚠️ Provisional Analytic Constructs
+The tiers, flags, mappings, and scoring criteria defined in this document are **working analytic constructs**. They constitute a preliminary methodology designed for Phase 1 literature review and gap analysis. All parameters—including the Global Priority Logic tiers and the Logic Dictionary—are provisional and are expected to dynamically evolve based on the actual content, frameworks, and edge-cases discovered in the literature.
 
 ## ⚖️ Global Priority Logic (The Dynamic Switch)
 * **Tier 1: High Proximity (Direct Life-Safety)**

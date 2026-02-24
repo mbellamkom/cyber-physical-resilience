@@ -19,3 +19,5 @@ __pycache__/
 # Internal: Hide internal project management files
 TODO.md
 Research.code-workspace
+notes
+venv/

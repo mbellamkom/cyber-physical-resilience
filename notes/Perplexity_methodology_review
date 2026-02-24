@@ -1,0 +1,324 @@
+_Based on a conversation had with Perplexity AI about the current research methodology and current guardrails_
+
+
+
+# Methodology Review Discussion – Dynamic Risk Management: Cyber-Physical Research Pipeline
+
+_Date: 2026-02-22_
+
+---
+
+## 1. Repository and Goal
+
+You shared the GitHub repository:
+
+- `https://github.com/mbellamkom/cyber-physical-resilience`
+- Focus: Dynamic Risk Management in critical infrastructure, centered on the “Break-Glass” intersection where cybersecurity lockdowns may be degraded to protect life or prevent physical disasters.
+- Current stage: Preliminary methodology for a Phase 1 literature review and possible gap analysis; all parameters are expected to evolve based on what the literature actually contains.
+
+---
+
+## 2. README – Overall Pipeline and Methodology
+
+### 2.1 Project Overview
+
+Key concepts from the README:
+
+- Investigates **Dynamic Risk Management** models that move from rigid security to flexible, risk-informed, resilient behaviors:
+  - Adaptability (recognizing when one risk outweighs another)
+  - Graceful degradation
+  - Post-incident evolution
+- Core focus: the **“Break-Glass” intersection** – emergency moments where cyber controls may need to be intentionally degraded/bypassed to:
+  - Preserve “All-Souls-on-Site” (life safety)  
+  - Prevent downstream physical disasters (e.g., cascading failures, environmental harm)
+- Tension:
+  - Cybersecurity (traditionally **fail-secure**): lock down to protect data/hardware.
+  - Emergency management (typically **fail-safe**): keep access open for life safety and critical operations.
+
+### 2.2 Three-Tier “Dynamic Switch” Logic
+
+The pipeline evaluates global frameworks (NIST, ISO, FEMA, etc.) through a three-tier logic:
+
+- **Tier 1 – Manned Facilities (High Proximity)**  
+  - Context: Hospitals, transport hubs, other manned facilities.  
+  - Rule: **Human/Soul-First** – security must fail-open when necessary so it does not impede escape routes or life-support for “All-Souls-on-Site”.
+
+- **Tier 2 – Remote Sites with Downstream Risk**  
+  - Context: Remote power substations, dams, offshore ROVs, etc.  
+  - Rule: **Balanced** – prioritize asset security specifically to prevent secondary community-level disasters or environmental hazards.
+
+- **Tier 3 – Isolated/Unmanned Sites**  
+  - Context: Isolated environments with no direct or downstream human/physical risk.  
+  - Rule: **Asset-First** – prioritize strict mission continuity and hardware integrity.
+
+### 2.3 Tech Stack
+
+- AI Models: Google Gemini (via google-genai API) for discovery and technical extraction.
+- Vector DB: Qdrant for embeddings and local memory.
+- Search: `scholarly` (Google Scholar) + `ddgs` (DuckDuckGo) for academic and grey literature.
+- Notifications: Discord webhooks for human-in-the-loop review alerts.
+
+### 2.4 Automation Pipeline
+
+Three main steps:
+
+1. **Step 1: Discovery (`scout.py`)**
+   - A pluggable hybrid AI agent that:
+     - Brainstorms search queries from broad research topics.
+     - Searches academic and grey literature.
+     - Scores abstracts/snippets against `PROJECT_RULES.md`.
+     - Sends high-quality hits to Discord for manual review.
+     - Logs low-quality hits in a “smart memory” file (`seen_sources.txt`) for auditing and avoiding duplicates.
+   - Architectural choice:
+     - **Decoupled pipeline**: `scout.py` discovers and scores, but does not download PDFs.
+     - Humans manually obtain PDFs (including paywalled/university access) and drop them into `sources/`.
+     - This ensures both access flexibility and a human validation step before ingestion.
+   - **Reproducible memory**:
+     - The “seen_sources.txt” log is tracked in Git as an auditable history of:
+       - Queries executed
+       - Documents evaluated (including LOW relevance)
+       - Prevents double evaluation and supports reproducibility.
+
+2. **Step 2: Technical Extraction (`librarian.py`)**
+   - Uses Gemini to read PDFs from `sources/`.
+   - Does **not** generate generic summaries.
+   - Extracts:
+     - Decision models
+     - Safety triggers
+     - Framework rules relevant to dynamic risk / break-glass / safety vs security
+   - Saves notes as structured Markdown in `audits/`.
+   - Example: `examples/NIST.SP.800-53r5_audit.md`.
+
+3. **Step 3: Synthesis**
+   - Extracted notes + metadata are pushed via CLI into NotebookLM.
+   - This forms a private RAG library you can query to:
+     - Connect frameworks
+     - Map patterns
+     - Support the final analysis and gap mapping
+   - AI is not allowed to perform the final synthesis; that remains human-driven.
+
+---
+
+## 3. PROJECT_RULES – Master Rules and Logic
+
+### 3.1 Project Identity and Mission
+
+- **Project Identity**: “Cyber-Physical Resilience Librarian”.
+- **Mission Statement**:
+  - Investigate Dynamic Risk Management models that move from rigid security to flexible, risk-informed, resilient behaviors.
+  - Focus on the **Break-Glass** intersection where security is degraded to:
+    - Preserve “All-Souls-on-Site”.
+    - Prevent downstream physical disasters.
+
+### 3.2 Global Priority Logic (Dynamic Switch)
+
+Reiterates the three-tier model:
+
+- Tier 1 (High Proximity, Direct Life-Safety) → Human/Soul-First.
+- Tier 2 (Remote/Unmanned with Downstream Risk) → Balanced; asset security used to prevent second-/third-order physical harms.
+- Tier 3 (Isolated/Unmanned) → Asset-First.
+
+### 3.3 Evolution Directive (Master Clause)
+
+- The framework is **explicitly iterative**.
+- The AI must use the 🚩`[PROMPT_EVOLUTION_TRIGGER]` flag whenever it encounters:
+  - Theoretical gaps: scenarios, linguistic nuances, novel risk frameworks, or sector-specific logic not covered by current rules.
+  - Procedural/pipeline failures: broken PDF structures, OCR failures, missing page numbers, extraction issues.
+- These triggers are **suggestions** for human review; the AI cannot autonomously rewrite rules.
+
+### 3.4 Academic Constraint
+
+- All logic changes, mappings, and classification rules must be **derived from the human researcher**.
+- The AI is **forbidden** from:
+  - Inventing new rules, evaluation metrics, or taxonomy categories on its own.
+  - Modifying `.agent/` files without explicit human review and approval.
+- This creates a hard boundary: AI executes and proposes; humans approve and own the methodology.
+
+### 3.5 Audit Terminology & Resilience Flags
+
+Flags used in analysis:
+
+- 🚩 `[INHERENT_FRICTION]`:  
+  Expected design trade-offs where security creates friction with life safety (e.g., fail-secure doors vs egress).
+
+- 🚩 `[SYSTEMIC_NEGLIGENCE]`:  
+  Macro frameworks that completely fail to acknowledge human safety, **when safety is a direct operational dependency** of governed systems.
+
+- 🟡 `[OUT_OF_SCOPE_SILENCE]`:  
+  Frameworks that are silent on safety *because* safety is genuinely outside their technical purview (e.g., specialized crypto standards).
+
+- 🚩 `[REGULATORY_BARRIER]`:  
+  Legal/compliance barriers to “flexible” overrides.
+
+- 🔍 `[SPOOF_VULNERABILITY]`:  
+  Sensor vulnerabilities that could be exploited to force a fail-open state.
+
+- 🔄 `[INCIDENT_FEEDBACK_LOOP]`:  
+  Requirements or mechanisms for post-incident learning/evolution (system “DNA” updates after break-glass events).
+
+### 3.6 Logic Dictionary (Technical Translation Layer)
+
+A mapping between thesis terms and global frameworks’ vocabulary:
+
+- **Asset Security**: Asset protection, availability, data protection, hardening, access control, perimeter defense, system uptime, information assurance, anti-tamper.
+- **Human Life-Safety**: Personnel safety, HSE/HSE, emergency egress, containment, physical security, occupational health.
+- **All-Souls-on-Site**: Personnel, users, occupants, POB/SOB, crew, visitors, patients, public, bystanders, biological life forms.
+- **Break-Glass**: Emergency access, admin bypass, manual override, fail-open, exceptional operating conditions, privilege escalation, SOS trigger.
+- **Resilient Flexibility**: Adaptive control, graceful degradation, operational continuity, dynamic risk assessment, context-aware policy, risk-informed shift.
+- **Sensor Spoofing**: False data injection, signal replay, sensor manipulation, MitM, measurement fault.
+- **Un-breaking the Glass**: Post-incident evolution, continuous improvement, iterative risk profile, anti-fragility.
+- **Downstream Risk**: Cascading failure, 2nd/3rd order effects, interdependency risk, environmental impact, community-level hazard.
+
+### 3.7 Scout Agent Scoring Criteria
+
+Relevance scoring for abstracts/grey literature:
+
+- **HIGH**:  
+  Primary thesis is the dynamic safety vs security / override conflict in an OT/cyber-physical context.
+
+- **MEDIUM**:  
+  Primary focus is relevant cyber-physical concepts (ICS resilience, emergency workflows, structural safety, etc.) and the safety vs security override tension appears tangentially or as a secondary theme.
+
+- **LOW**:  
+  No discussion of physical safety, emergency operations, or OT/ICS; e.g., pure IT frameworks about data privacy, encryption, financial fraud.
+
+---
+
+## 4. auditor.md – Skill: Senior Cyber-Physical Resilience Auditor
+
+### 4.1 Step 0: Source Classification & Rigor Audit
+
+- Classification weights:
+  - **Primary**: Official frameworks (NIST, ISO, FEMA, etc.).
+  - **High Weight**: Peer-reviewed journals (must have DOI/dates).
+  - **Supportive**: Theses/dissertations (with emphasis on results/data).
+- **Grey Literature Override**:
+  - Process blogs/expert opinions only if they discuss “Dynamic Risk” architecture, logic, or framework gaps.
+  - If they pass but lack empirical data/architecture diagrams → flag 🚩`[THEORETICAL_ONLY]`.
+- Exit Strategy:
+  - If neither dynamic logic nor gaps are present: 3-sentence summary and stop.
+
+### 4.2 Step 1: Ingestion & Language Gate
+
+- Only process English or English-translated sources → else `[SKIP_NON_ENGLISH]`.
+- IT-Centric check:
+  - If 100% information-only, with zero physical consequence: **exit**.
+- Identify operational context:
+  - [Manned / Unmanned / Remote].
+- Map sector failures to FEMA Community Lifelines based on functional impact.
+
+### 4.3 Step 2: Global Mapping & Functional Parity
+
+- 70% parity rule:
+  - A mapping is valid if **3 of 4** criteria match:
+    - Target (same asset type)
+    - Intent (same goal)
+    - Hazard (same physical consequence)
+    - Phase (same timeline)
+- Actions:
+  - ≥ 70%: bi-directional mapping between frameworks (e.g., NIST, ISO, IEC, NIS2, UK CAF).
+  - < 70%: tag `[LOW_PARITY_OUTLIER]`.
+- Additional checks:
+  - Break-Glass Analysis: identify SOS (Safety Over Security) triggers, if any.
+  - Sensor Integrity: evaluate spoofing and verification vulnerabilities.
+
+### 4.4 Step 3: Evolution Review
+
+- If a `[LOW_PARITY_OUTLIER]` is nevertheless highly relevant to Dynamic Risk → raise 🚩`[PROMPT_EVOLUTION_TRIGGER]` with suggested rule updates.
+
+### 4.5 Output Instructions
+
+- **Critical citation rule**:
+  - Must include section header, paragraph number, or control identifier (e.g., “AC-3(10)”) *plus* page number to handle PDF vs printed-page offsets.
+- Output is a structured Markdown artifact with sections:
+  - Document Metadata
+  - Resilient Flexibility Analysis
+  - Cross-Framework Parity Mapping
+  - Flags & Conflicts
+  - Extracted Evidence (with precise references)
+  - Research Utility & Suggested NotebookLM queries
+
+---
+
+## 5. PROMPT_CHANGELOG – Evolution and Rigor
+
+The changelog records:
+
+- **2026-02-22 – Parity Logic Extraction Formatting**
+  - Added explicit Cross-Framework Parity Mapping section + table to output template so the AI must show Target/Intent/Hazard/Phase matches and computed percentage.
+
+- **2026-02-22 – Evolution Directive Scope Expansion**
+  - Evolution triggers now include pipeline/formatting/OCR failures, not just theoretical gaps.
+
+- **2026-02-22 – Scout Agent Strict Relevance Criteria**
+  - Formalized HIGH/MEDIUM/LOW definitions to stop the model from improvising its own relevance criteria.
+
+- **2026-02-22 – Security Policy Creation**
+  - Added `SECURITY.md` to prevent staging/committing `.env`, secrets, large raw data. Applies to both humans and agents.
+
+- **2026-02-21 – Citation Rigor Update**
+  - Added the critical citation rule for section/control identifiers with page numbers due to PDF front-matter offsets.
+
+- **2026-02-21 – Source Rigor and Conflict Categorization Update**
+  - Added Step 0 classification & Grey Literature Override in `auditor.md`.
+  - Introduced `[INHERENT_FRICTION]`, `[SYSTEMIC_NEGLIGENCE]`, `[OUT_OF_SCOPE_SILENCE]` distinctions.
+  - Expanded Logic Dictionary for global inclusivity.
+
+- **2026-02-21 – Academic Constraint Fortification**
+  - Strengthened the clause that forbids the AI from inventing new categories or mappings; all taxonomy changes must be human-initiated and approved.
+
+---
+
+## 6. Scout Smart Memory Log
+
+Initial design (currently empty, to be populated when the pipeline runs at scale):
+
+- File: `seen_sources.txt` (or similar).
+- Purpose:
+  - Track **all** documents evaluated by Scout (HIGH, MEDIUM, LOW).
+  - Serve as Scout’s memory to avoid re-evaluating the same paper.
+  - Provide an auditable sampling log for reproducibility and later analysis.
+- Current format:
+  - `link|date`
+  - (You may optionally extend later to include relevance, source_type, and notes.)
+
+---
+
+## 7. High-Level Evaluation Points (for the Agent to Incorporate)
+
+These are the main suggestions and cautions raised in the discussion, which you plan to feed back into the agent and rules:
+
+1. **Mark rules as provisional**  
+   - Explicitly state in `PROJECT_RULES.md` that the tiers, flags, and mappings are working analytic constructs to be refined as the literature is reviewed.
+
+2. **Clarify role of the Dynamic Switch**  
+   - Treat Tier 1–3 as an analytic lens, not assumed ground truth; allow documents to map to multiple tiers or none.
+
+3. **Soften and contextualize some mappings and labels**  
+   - Handle terms like “Privilege Escalation → Break-Glass” only in clear, contextually justified cases.  
+   - Keep strong labels like `[SYSTEMIC_NEGLIGENCE]` as coding categories and reserve normative judgments for human analysis.
+
+4. **Expand what “counts” for grey literature and discovery**  
+   - Allow sources that discuss adaptive or conditional safety/security trade-offs, runtime risk decisions, or emergency operating modes even if they don’t use the exact phrase “Dynamic Risk”.
+
+5. **Support “none/unknown” in the template**  
+   - Let the auditor explicitly say “No explicit break-glass mechanism” or “Flexibility: Unknown/Not enough evidence” instead of inferring mechanisms where they aren’t clearly present.
+
+6. **Plan a calibration phase**  
+   - Before scaling up, manually code a small sample of documents, compare with AI outputs, and adjust:
+     - Logic Dictionary
+     - Flags
+     - Parity rules
+     - Flexibility ratings
+
+7. **Enrich Scout’s memory log (optionally)**  
+   - Consider extending the log format to:
+     - `link | date | relevance | source_type | notes`
+   - This would help later with:
+     - Describing screening flow
+     - Quantifying what was excluded and why
+     - Supporting gap analysis (e.g., many IT-only standards, few OT-resilience frameworks).
+
+---
+
+This markdown captures the substance of the chat: the current design of your pipeline, the rules and skill definitions, the prompt changelog, and the main methodological suggestions for refinement. You can now drop this into your repo (e.g., `notes/methodology_review_2026-02-22.md`) and use it as input for future agent iterations.  

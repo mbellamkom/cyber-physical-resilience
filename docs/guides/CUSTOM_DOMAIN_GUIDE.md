@@ -7,7 +7,7 @@ Here is a step-by-step guide on how to fundamentally adapt the tool for your own
 ## 1. Define Your Custom Agent Rules
 The core intelligence of this pipeline lies in how the AI "Librarian" evaluates documents. 
 1. Create a new directory for your rules, e.g., `my_domain_rules/`.
-2. Create a `MY_RULES.md` file. In this file, define your **Global Priority Logic**, any specific nuances you want the AI to look for, and the specific constraint flags you care about (similar to `[SYSTEMIC_NEGLIGENCE]` in our example).
+2. Create a `MY_RULES.md` file. In this file, define your **Global Priority Logic**, any specific nuances you want the AI to look for, and the specific constraint flags you care about (similar to `[SYSTEMIC_OMISSION]` in our example).
 3. Create a `my_auditor_skill.md` file. This is the explicit instruction set for the Gemini API call telling the AI exactly *what format* you want the output in and *what steps* it should take before extracting data.
 
 ## 2. Update Environment Variables
