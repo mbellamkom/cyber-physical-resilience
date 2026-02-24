@@ -43,6 +43,14 @@ VECTOR_SIZE = 768
 # --- D-DRIVE MARKDOWN MIRROR ---
 DB_MIRROR_DIR = Path(os.getenv("DB_MIRROR_PATH", "D:/Cyber_Physical_DBs"))
 
+# --- EXTRACTOR HUB CONFIG ---
+EXTRACTOR_HUB_URL     = "http://localhost:8003"
+EXTRACTOR_HUB_ENABLED = True
+EXTRACTOR_MAX_CHARS   = 3000  # Truncation limit to stay within Ollama context
+
+# --- PERSISTENT TRIAGE TALLY ---
+VERDICTS_FILE = Path("D:/Docker/extractor/stats/research_verdicts.json")
+
 # --- MASTER QUERIES FALLBACK ---
 # Used when both the cache is missing and the Gemini API is unavailable (e.g. 429).
 MASTER_SCHOLAR_QUERIES = [
@@ -86,6 +94,16 @@ class RunLogger:
     def __init__(self):
         self._ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
         self._counts = {"evaluated": 0, "high_medium": 0, "low": 0, "triage": 0, "sieve": 0}
+        # Load lifetime verdicts from D: drive (creates defaults if file missing)
+        self._lifetime = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
+        if VERDICTS_FILE.exists():
+            try:
+                loaded = json.loads(VERDICTS_FILE.read_text(encoding="utf-8"))
+                self._lifetime["HIGH"]   = int(loaded.get("HIGH",   0))
+                self._lifetime["MEDIUM"] = int(loaded.get("MEDIUM", 0))
+                self._lifetime["LOW"]    = int(loaded.get("LOW",    0))
+            except Exception:
+                pass
         self._f = open(RUN_LOG, "a", encoding="utf-8")
         self._f.write(f"\n---\n\n## 🚀 Run — {self._ts}\n\n")
         self._f.flush()
@@ -103,12 +121,15 @@ class RunLogger:
         self._f.flush()
 
     def score(self, relevance: str):
-        """Track a scored result."""
+        """Track a scored result (session + lifetime)."""
         self._counts["evaluated"] += 1
         if relevance in ("HIGH", "MEDIUM"):
             self._counts["high_medium"] += 1
         elif relevance == "LOW":
             self._counts["low"] += 1
+        # Increment lifetime counter
+        if relevance in self._lifetime:
+            self._lifetime[relevance] += 1
 
     def triage(self):
         self._counts["triage"] += 1
@@ -116,8 +137,25 @@ class RunLogger:
     def sieve(self):
         self._counts["sieve"] += 1
 
+    def _save_verdicts(self):
+        """Persists lifetime HIGH/MEDIUM/LOW counts to D: drive."""
+        try:
+            VERDICTS_FILE.parent.mkdir(parents=True, exist_ok=True)
+            payload = {
+                "HIGH":         self._lifetime["HIGH"],
+                "MEDIUM":       self._lifetime["MEDIUM"],
+                "LOW":          self._lifetime["LOW"],
+                "last_updated": self._ts,
+            }
+            VERDICTS_FILE.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        except Exception as e:
+            print(f"[!] Could not save verdicts: {e}")
+
     def _close(self):
-        c = self._counts
+        self._save_verdicts()
+        c  = self._counts
+        lt = self._lifetime
+        total = lt["HIGH"] + lt["MEDIUM"] + lt["LOW"]
         self._f.write("\n#### 📊 Session Summary\n\n")
         self._f.write("| Metric | Count |\n| :--- | :--- |\n")
         self._f.write(f"| Total evaluated | {c['evaluated']} |\n")
@@ -127,6 +165,17 @@ class RunLogger:
         self._f.write(f"| ⚪ Sieve rejections | {c['sieve']} |\n\n")
         self._f.flush()
         self._f.close()
+        # CMD-friendly lifetime summary
+        print("")
+        print("=" * 60)
+        print("LIFETIME RESEARCH STATS (D:\\Docker\\extractor\\stats\\)")
+        print("-" * 60)
+        print(f"  HIGH   : {lt['HIGH']}")
+        print(f"  MEDIUM : {lt['MEDIUM']}")
+        print(f"  LOW    : {lt['LOW']}")
+        print(f"  TOTAL  : {total}")
+        print(f"  Last updated: {self._ts}")
+        print("=" * 60)
 
 rl = RunLogger()
 
@@ -281,6 +330,43 @@ def embed_text(text):
         print(f"[!] Embedding failed: {e}")
     return None
 
+
+# --- EXTRACTOR HUB HELPERS ---
+
+def fetch_full_text(url: str):
+    """Fetches full-text markdown from the Extractor Hub (port 8003).
+    Returns truncated markdown string on success, None on any failure.
+    CPU-only -- hub is configured with EXTRACTOR_GPU=cpu.
+    """
+    if not EXTRACTOR_HUB_ENABLED:
+        return None
+    try:
+        resp = requests.post(
+            f"{EXTRACTOR_HUB_URL}/extract",
+            json={"uri": url},
+            timeout=15,
+        )
+        if resp.status_code == 200:
+            md = resp.json().get("markdown", "")
+            return md[:EXTRACTOR_MAX_CHARS] if md else None
+    except Exception:
+        pass
+    return None
+
+
+def enrich_item(item: dict) -> dict:
+    """Replaces item['snippet'] with full-text from the hub if available.
+    Sets item['enriched'] = True/False so callers can log the outcome.
+    """
+    full_text = fetch_full_text(item.get("link", ""))
+    if full_text:
+        item["snippet"] = full_text
+        item["enriched"] = True
+    else:
+        item["enriched"] = False
+    return item
+
+
 def ingest_triage_logs(qdrant):
     """Parses triage_log.md and rejected_sources.md and upserts entries into triage_memory."""
     entries = []
@@ -398,7 +484,7 @@ SCORING RULES:
   financial fraud) with zero physical safety or OT/ICS relevance.
 
 SNIPPETS:
-{json.dumps([{{"index": i, "title": s["title"], "snippet": s["snippet"]}} for i, s in enumerate(snippets_bulk)], indent=2)}
+{json.dumps([{{"index": i, "title": s["title"], "content": s["snippet"]}} for i, s in enumerate(snippets_bulk)], indent=2)}
 
 Evaluate each snippet. Output your answer as a JSON object with a single key "results" containing an array:
 {{"results": [
@@ -454,9 +540,18 @@ def process_final_score(item, rel, rat):
         log_rejection(title, link, rat)
 
 def process_batch(batch, rules_text):
-    """Processes a batch of snippets through Stage 2 (Ollama) and Stage 3 (DeepSeek)."""
+    """Processes a batch through Stage 1.5 (Hub enrichment), Stage 2 (Ollama), Stage 3 (DeepSeek)."""
     if not batch: return
     rl.log(f"[*] Processing batch of {len(batch)} snippets through Local Bouncer...")
+
+    # --- STAGE 1.5: EXTRACTOR HUB ENRICHMENT ---
+    enriched_count = 0
+    for item in batch:
+        enrich_item(item)
+        if item.get("enriched"):
+            enriched_count += 1
+    rl.log(f"[Hub] Enriched {enriched_count}/{len(batch)} items with full text "
+           f"({len(batch) - enriched_count} fallback to snippet).")
 
     ollama_results = evaluate_with_ollama(batch)
 
@@ -466,6 +561,7 @@ def process_batch(batch, rules_text):
             rel_data = evaluate_snippet(item["title"], item["snippet"], rules_text)
             process_final_score(item, rel_data.get("relevance", "LOW"), rel_data.get("rationale", "No rationale."))
             time.sleep(3)
+        rl._save_verdicts()
         return
 
     try:
@@ -492,6 +588,9 @@ def process_batch(batch, rules_text):
                     time.sleep(3)
     except Exception as e:
         rl.log(f"[!] Error parsing batch results: {e}")
+
+    # Persist lifetime verdicts to D: drive after every batch
+    rl._save_verdicts()
 
 # --- GENAI CAPABILITIES ---
 def generate_queries(topics):
