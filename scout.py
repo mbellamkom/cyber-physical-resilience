@@ -35,9 +35,13 @@ QUERY_CACHE = LOGS_DIR / "query_cache.json"
 # --- QDRANT / LOCAL RAG CONFIG ---
 QDRANT_PATH = os.getenv("QDRANT_LOCAL_PATH", str(RESEARCH_PATH / ".qdrant_db"))
 TRIAGE_COLLECTION = "triage_memory"
+SCOUT_COLLECTION = "scout_memory"
 OLLAMA_URL = "http://localhost:11434"
 EMBED_MODEL = "nomic-embed-text"  # 768-dim, matches global_resilience_vault
 VECTOR_SIZE = 768
+
+# --- D-DRIVE MARKDOWN MIRROR ---
+DB_MIRROR_DIR = Path(os.getenv("DB_MIRROR_PATH", "D:/Cyber_Physical_DBs"))
 
 # --- MASTER QUERIES FALLBACK ---
 # Used when both the cache is missing and the Gemini API is unavailable (e.g. 429).
@@ -126,6 +130,99 @@ class RunLogger:
 
 rl = RunLogger()
 
+# --- QDRANT HELPERS ---
+
+def _get_qdrant():
+    """Returns a Qdrant client with both collections initialized."""
+    client = QdrantClient(path=QDRANT_PATH)
+    for name in (TRIAGE_COLLECTION, SCOUT_COLLECTION):
+        try:
+            client.get_collection(name)
+        except Exception:
+            client.create_collection(
+                collection_name=name,
+                vectors_config=models.VectorParams(size=VECTOR_SIZE, distance=models.Distance.COSINE)
+            )
+    return client
+
+def upsert_discovery(title, link, relevance, rationale, source="unknown"):
+    """Embeds and upserts a discovery into scout_memory. Deduplicates by URL."""
+    try:
+        vector = embed_text(f"{title} {rationale}")
+        if not vector:
+            return
+        point_id = str(uuid.uuid5(uuid.NAMESPACE_URL, link))
+        payload = {
+            "title": title, "link": link, "relevance": relevance,
+            "rationale": rationale, "source": source,
+            "date": datetime.datetime.now().strftime("%Y-%m-%d"),
+            "run_ts": rl._ts
+        }
+        q = _get_qdrant()
+        q.upsert(collection_name=SCOUT_COLLECTION,
+                 points=[models.PointStruct(id=point_id, vector=vector, payload=payload)])
+        q.close()
+    except Exception as e:
+        rl.log(f"[!] Qdrant upsert failed: {e}")
+
+def _backfill_scout_memory():
+    """One-time backfill: reads seen_sources.md and upserts historic entries."""
+    if not MEMORY_FILE.exists():
+        return
+    try:
+        q = _get_qdrant()
+        existing = {str(p.id) for p in q.scroll(SCOUT_COLLECTION, limit=10000)[0]}
+        count = 0
+        with open(MEMORY_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                if not line.startswith("| ["):
+                    continue
+                # Parse: | [title](link) | date | badge relevance | rationale |
+                parts = [p.strip() for p in line.strip().strip("|").split("|")]
+                if len(parts) < 4:
+                    continue
+                # Extract title and link from "[title](link)"
+                m = re.match(r'\[(.+?)\]\((.+?)\)', parts[0])
+                if not m:
+                    continue
+                title, link = m.group(1), m.group(2)
+                # Relevance may have emoji badge prefix
+                rel_raw = parts[2].strip()
+                relevance = rel_raw.split()[-1] if rel_raw else "LOW"
+                rationale = parts[3].strip() if len(parts) > 3 else ""
+                point_id = str(uuid.uuid5(uuid.NAMESPACE_URL, link))
+                if point_id in existing:
+                    continue
+                vector = embed_text(f"{title} {rationale}")
+                if vector:
+                    q.upsert(collection_name=SCOUT_COLLECTION, points=[
+                        models.PointStruct(id=point_id, vector=vector,
+                            payload={"title": title, "link": link, "relevance": relevance,
+                                     "rationale": rationale, "source": "backfill",
+                                     "date": "legacy", "run_ts": "backfill"})
+                    ])
+                    count += 1
+        q.close()
+        if count:
+            rl.log(f"[+] Backfilled {count} historic entries into '{SCOUT_COLLECTION}'.")
+    except Exception as e:
+        rl.log(f"[!] Backfill failed: {e}")
+
+_backfill_scout_memory()
+
+# --- D-DRIVE MIRROR ---
+import shutil
+
+def mirror_logs():
+    """Copies all markdown log files to DB_MIRROR_DIR. Silently skips if unavailable."""
+    try:
+        DB_MIRROR_DIR.mkdir(parents=True, exist_ok=True)
+        for src in (MEMORY_FILE, REJECTED_LOG, TRIAGE_LOG, RUN_LOG):
+            if src.exists():
+                shutil.copy2(src, DB_MIRROR_DIR / src.name)
+    except Exception:
+        pass  # Mirror drive unavailable — script continues uninterrupted
+
 
 def load_rules():
     """Load the project rules for the LLM context."""
@@ -185,7 +282,7 @@ def embed_text(text):
     return None
 
 def ingest_triage_logs(qdrant):
-    """Parses triage_log.md and rejected_sources.md and upserts recent entries into triage_memory."""
+    """Parses triage_log.md and rejected_sources.md and upserts entries into triage_memory."""
     entries = []
     for log_file in [TRIAGE_LOG, REJECTED_LOG]:
         if not log_file.exists():
@@ -193,11 +290,15 @@ def ingest_triage_logs(qdrant):
         with open(log_file, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
-                if line.startswith("- **["):  # formatted log entry
+                # Match new format: ### 🔴 LOW — [Title](url)
+                if line.startswith("### ") and "\u2014" in line:
+                    entries.append(line)
+                # Match legacy format: - **[date]** [title](url)
+                elif line.startswith("- **["):
                     entries.append(line)
 
     if not entries:
-        print("[*] No triage log entries to ingest.")
+        rl.log("[*] No triage log entries to ingest.")
         return
 
     points = []
@@ -225,12 +326,14 @@ def is_new_discovery(link, refresh_days=30):
     return True
 
 def log_discovery(title, link, relevance, rationale):
-    """Records a new discovery in the memory file (seen_sources.md)."""
+    """Records a new discovery in seen_sources.md AND Qdrant scout_memory."""
     today = datetime.datetime.now().strftime("%Y-%m-%d")
     badge = SCORE_EMOJI.get(relevance, "")
     with open(MEMORY_FILE, "a", encoding="utf-8") as f:
         f.write(f"| [{title}]({link}) | {today} | {badge} {relevance} | {rationale} |\n")
     rl.score(relevance)
+    upsert_discovery(title, link, relevance, rationale)
+    mirror_logs()
 
 def notify_detailed(title, link, score, rationale):
     """Sends scored alert to Discord."""
