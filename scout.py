@@ -257,7 +257,7 @@ def _backfill_scout_memory():
     except Exception as e:
         rl.log(f"[!] Backfill failed: {e}")
 
-_backfill_scout_memory()
+# NOTE: _backfill_scout_memory() is called after embed_text is defined (in __main__ block)
 
 # --- D-DRIVE MIRROR ---
 import shutil
@@ -466,6 +466,13 @@ def python_sieve(title, snippet):
 # --- STAGE 2: LOCAL BOUNCER (OLLAMA) ---
 def evaluate_with_ollama(snippets_bulk):
     """Sends a batch of snippets to local DeepSeek."""
+    # Build the serialised content block outside the f-string to avoid
+    # Python misinterpreting {{...}} inside the comprehension as a set literal.
+    content_list = [
+        {"index": i, "title": s["title"], "content": s["snippet"]}
+        for i, s in enumerate(snippets_bulk)
+    ]
+    content_json = json.dumps(content_list, indent=2)
     prompt = f"""
 You are a research triage assistant for a study on Dynamic Risk Management in cyber-physical systems.
 Evaluate each search snippet using the following STRICT scoring rules:
@@ -484,7 +491,7 @@ SCORING RULES:
   financial fraud) with zero physical safety or OT/ICS relevance.
 
 SNIPPETS:
-{json.dumps([{{"index": i, "title": s["title"], "content": s["snippet"]}} for i, s in enumerate(snippets_bulk)], indent=2)}
+{content_json}
 
 Evaluate each snippet. Output your answer as a JSON object with a single key "results" containing an array:
 {{"results": [
@@ -791,6 +798,9 @@ if __name__ == "__main__":
     if legacy.exists() and not MEMORY_FILE.exists():
         legacy.rename(MEMORY_FILE)
         rl.log("[*] Migrated seen_sources.txt -> seen_sources.md")
+
+    # Backfill historic entries now that embed_text is defined
+    _backfill_scout_memory()
 
     rules = load_rules()
     topics_env = os.getenv("RESEARCH_TOPICS", "NIST 800-82 safety over security, FEMA Lifelines Cyber Dependency")
