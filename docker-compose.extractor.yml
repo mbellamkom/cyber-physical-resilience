@@ -1,0 +1,63 @@
+# docker-compose.extractor.yml
+# Extractor Manager Service — Windows Configuration
+#
+# D: Drive volumes:
+#   D:\Docker\extractor\logs  → /data/logs   (manager logs)
+#   D:\Docker\extractor\stats → /data/stats  (lifetime stats JSON)
+#
+# Safety limits (set in .env):
+#   NUM_EXTRACTOR_WORKERS=2   keeps NVIDIA VRAM free for Ollama
+#   EXTRACTOR_GPU=cpu         disables GPU allocation entirely
+#
+# Start:  docker-compose -f docker-compose.extractor.yml up -d
+# Stop:   docker-compose -f docker-compose.extractor.yml down
+# Logs:   docker logs -f extractor-manager
+
+version: "3.9"
+
+services:
+  extractor-manager:
+    image: extractor-manager:latest
+    container_name: extractor-manager
+
+    # --- Port binding ---
+    ports:
+      - "8003:8003"
+
+    # --- Network ---
+    networks:
+      - newsbot-network
+
+    # --- Environment ---
+    env_file:
+      - .env           # Loads NUM_EXTRACTOR_WORKERS, EXTRACTOR_GPU, etc.
+    environment:
+      # Explicit overrides (take precedence over .env values)
+      - EXTRACTOR_GPU=cpu
+      - NUM_EXTRACTOR_WORKERS=2
+      - TRACE_EVERYTHING=true
+      - HOST_CODE_PATH=D:/Docker/extractor
+
+    # --- Volume mounts ---
+    volumes:
+      # Windows Docker named pipe (replaces /var/run/docker.sock on Linux)
+      - type: npipe
+        source: \\.\pipe\docker_engine
+        target: /var/run/docker.sock
+
+      # D: drive → container log directory (persisted on D:)
+      - type: bind
+        source: D:\Docker\extractor\logs
+        target: /data/logs
+
+      # D: drive → container stats directory (lifetime stats JSON)
+      - type: bind
+        source: D:\Docker\extractor\stats
+        target: /data/stats
+
+    # --- Restart policy ---
+    restart: unless-stopped
+
+networks:
+  newsbot-network:
+    external: true   # Created by setup-extractor.ps1 or docker-compose.network.yml
