@@ -8,10 +8,13 @@ import requests
 from pathlib import Path
 from dotenv import load_dotenv
 from scholarly import scholarly
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 from discord_webhook import DiscordWebhook
-from google import genai
 from qdrant_client import QdrantClient, models
+try:
+    from googlesearch import search as google_search
+except ImportError:
+    google_search = None
 
 # Load environment variables
 load_dotenv()
@@ -60,8 +63,6 @@ if not TRIAGE_LOG.exists():
     with open(TRIAGE_LOG, "w", encoding="utf-8") as f:
         f.write("# Triage Log\n*These documents were scoped out by the Local Bouncer (DeepSeek).* \n\n")
 
-# Initialize Gemini Client for the Scout Agent
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 def load_rules():
     """Load the project rules for the LLM context."""
@@ -193,7 +194,7 @@ def log_triage_rejection(title, link, score, rationale):
 # --- STAGE 1: PYTHON SIEVE ---
 SIEVE_KEYWORDS = [
     "safety", "security", "ics", "ot", "scada", "cyber-physical",
-    "breach", "emergency", "override", "risk", "resilience", "hazard", 
+    "breach", "emergency", "override", "risk", "resilience", "hazard",
     "industrial", "infrastructure"
 ]
 
@@ -212,10 +213,10 @@ If it explicitly mentions major frameworks (NIST, ISO) but is completely silent 
 SNIPPETS:
 {json.dumps([{"index": i, "title": s["title"], "snippet": s["snippet"]} for i, s in enumerate(snippets_bulk)], indent=2)}
 
-Evaluate each snippet. Output exactly a JSON array of objects with this format:
-[
+Evaluate each snippet. Output your answer as a JSON object with a single key "results" containing an array:
+{{"results": [
   {{"index": 0, "relevance": "HIGH" or "MEDIUM" or "LOW" or "SILENT_ANOMALY", "rationale": "One concise sentence."}}
-]
+]}}
 """
     try:
         response = requests.post("http://localhost:11434/api/generate", json={
@@ -224,9 +225,29 @@ Evaluate each snippet. Output exactly a JSON array of objects with this format:
             "stream": False,
             "format": "json"
         }, timeout=120)
-        
+
         if response.status_code == 200:
-            return json.loads(response.json()["response"])
+            raw = response.json().get("response", "")
+            # Scrub any <think>...</think> blocks DeepSeek may emit
+            raw = re.sub(r'<think>.*?</think>', '', raw, flags=re.DOTALL).strip()
+            # DeepSeek with format=json may wrap the array in {"results": [...]}
+            # Try direct parse first, then extract the first JSON array found.
+            try:
+                parsed = json.loads(raw)
+                # Primary path: object with 'results' key (matches our prompt)
+                if isinstance(parsed, dict):
+                    for key in ("results", "evaluations", "snippets", "output"):
+                        if key in parsed and isinstance(parsed[key], list):
+                            return parsed[key]
+                # Fallback: model returned a bare array
+                if isinstance(parsed, list):
+                    return parsed
+                # Last resort: regex-extract the first JSON array from the string
+                match = re.search(r'\[.*?\]', raw, flags=re.DOTALL)
+                if match:
+                    return json.loads(match.group())
+            except json.JSONDecodeError as e:
+                print(f"[!] Local Bouncer parse failed: {e}")
     except Exception as e:
         print(f"[!] Local Bouncer offline or failed: {e}")
     return None
@@ -238,7 +259,7 @@ def process_final_score(item, rel, rat):
     if rel == "IGNORE":
         print(f"  -> Skipping log for non-English source: {title[:40]}")
         return
-        
+
     if rel in ["HIGH", "MEDIUM"]:
         notify_detailed(title, link, rel, rat)
     else:
@@ -248,15 +269,15 @@ def process_batch(batch, rules_text):
     """Processes a batch of snippets through Stage 2 (Ollama) and Stage 3 (Gemini)."""
     if not batch: return
     print(f"[*] Processing batch of {len(batch)} snippets through Local Bouncer...")
-    
+
     ollama_results = evaluate_with_ollama(batch)
-    
+
     if ollama_results is None:
-        print("[!] Falling back to Gemini individual evaluation (Throttled)...")
+        print("[!] Bouncer parse failed. Falling back to individual DeepSeek evaluation...")
         for item in batch:
             rel_data = evaluate_snippet(item["title"], item["snippet"], rules_text)
             process_final_score(item, rel_data.get("relevance", "LOW"), rel_data.get("rationale", "No rationale."))
-            time.sleep(10) # Fallback 10s wait logic
+            time.sleep(3) # Brief pause between individual calls
         return
 
     try:
@@ -265,28 +286,29 @@ def process_batch(batch, rules_text):
                 idx = res.get("index")
                 rel = res.get("relevance", "LOW")
                 rat = res.get("rationale", "No rationale.")
-                
+
                 if idx is None or not isinstance(idx, int) or idx >= len(batch): continue
-                
+
                 item = batch[idx]
                 title, link, snippet = item["title"], item["link"], item["snippet"]
-                
-                print(f"  -> [Ollama Triage] {title[:40]}... Score: {rel}")
-                
+
+                print(f"  -> [Bouncer Triage] {title[:40]}... Score: {rel}")
+
                 if rel in ["LOW", "SILENT_ANOMALY"]:
                     log_triage_rejection(title, link, rel, rat)
                 else:
-                    # STAGE 3: GEMINI
-                    print(f"  -> [Gemini Confirming] {title[:40]}...")
-                    gem_data = evaluate_snippet(title, snippet, rules_text)
-                    process_final_score(item, gem_data.get("relevance", "LOW"), gem_data.get("rationale", "No rationale."))
-                    time.sleep(10) # Optional spacing so Gemini doesn't burst if batch hits multiple HIGHs
+                    # STAGE 3: DEEPSEEK CONFIRMATION
+                    print(f"  -> [DeepSeek Confirming] {title[:40]}...")
+                    ds_data = evaluate_snippet(title, snippet, rules_text)
+                    process_final_score(item, ds_data.get("relevance", "LOW"), ds_data.get("rationale", "No rationale."))
+                    time.sleep(3)
     except Exception as e:
         print(f"[!] Error parsing batch results: {e}")
 
 # --- GENAI CAPABILITIES ---
 def generate_queries(topics):
     """Queries triage_memory for RAG context and prompts local deepseek-r1:8b to generate search queries."""
+    qdrant = None
     try:
         qdrant = init_triage_collection()
         ingest_triage_logs(qdrant)
@@ -349,6 +371,9 @@ Output ONLY valid JSON with no extra text:
 
     except Exception as e:
         print(f"[!] Local brainstorm failed: {e}")
+    finally:
+        if qdrant is not None:
+            qdrant.close()
 
     print("[!] Falling back to hardcoded Master Queries.")
     return MASTER_SCHOLAR_QUERIES, MASTER_DDG_QUERIES
@@ -395,12 +420,12 @@ def search_scholar(query, rules_text, limit=3):
             title = paper['bib'].get('title', 'Unknown')
             abstract = paper['bib'].get('abstract', '')
             link = paper.get('pub_url', 'No link')
-            
+
             if link == 'No link' or not is_new_discovery(link): continue
             if not python_sieve(title, abstract):
                 print(f"  -> System Sieve rejected: {title[:40]}...")
                 continue
-                
+
             batch.append({"title": title, "snippet": abstract, "link": link})
             time.sleep(5)
     except StopIteration:
@@ -413,19 +438,18 @@ def search_ddg(query, rules_text, limit=4):
     print(f"\n[*] Web Search (DDG): {query}")
     batch = []
     try:
-        from ddgs import ddgs
-        with ddgs() as duck:
+        with DDGS() as duck:
             results = duck.text(query, max_results=limit)
             for res in results:
                 title = res.get('title', 'Unknown')
                 snippet = res.get('body', '')
                 link = res.get('href', 'No link')
-                
+
                 if link == 'No link' or not is_new_discovery(link): continue
                 if not python_sieve(title, snippet):
                     print(f"  -> System Sieve rejected: {title[:40]}...")
                     continue
-                    
+
                 batch.append({"title": title, "snippet": snippet, "link": link})
                 time.sleep(2)
     except Exception as e:
@@ -436,6 +460,9 @@ def search_google(query, rules_text, limit=4):
     """Scrapes Google Search for Grey Literature as a DDG fallback."""
     print(f"\n[*] Web Search (Google): {query}")
     batch = []
+    if google_search is None:
+        print("[!] Google Search unavailable: run `pip install googlesearch-python` to enable.")
+        return
     try:
         results = google_search(query, num_results=limit, advanced=False)
         for res in results:
@@ -447,12 +474,12 @@ def search_google(query, rules_text, limit=4):
                 title = str(getattr(res, 'title', 'Unknown'))
                 snippet = str(getattr(res, 'description', ''))
                 link = str(getattr(res, 'url', 'No link'))
-            
+
             if link == 'No link' or not is_new_discovery(link): continue
             if not python_sieve(title, snippet):
                 print(f"  -> System Sieve rejected: {title[:40]}...")
                 continue
-                
+
             batch.append({"title": title, "snippet": snippet, "link": link})
             time.sleep(2)
     except Exception as e:
