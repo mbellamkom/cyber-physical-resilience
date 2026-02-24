@@ -1,13 +1,13 @@
 {
-  "generated_on": "2026-02-23",
+  "generated_on": "2026-02-24",
   "scholar_queries": [
-    "((NIST AND resilience) OR (NIST AND cyber-physical)) AND (ICS OR industrial control systems) AND (life-safety)",
-    "((NIST SP 800- something) OR (NIST guidelines)) AND (ICS OR industrial control systems) AND (life-safety)",
-    "((maritime OR energy) OR (energy sector)) AND (ICS OR industrial control systems) AND (code OR standard) AND (life-safety)"
+    "((\"safety over security\") OR (life-safety engineering)) AND (critical infrastructure OR OT OR industrial control systems) AND (cybersecurity OR risk management)",
+    "((safety-first approach) OR (life safety principles)) AND (OT environments OR ICS OR industrial automation) AND (cybersecurity risks OR resilience)",
+    "((engineering safety) AND (cybersecurity)) AND (critical infrastructure systems OR OT OR ICS) AND (regulatory frameworks OR standards)"
   ],
   "ddg_queries": [
-    "life-safety standards for ICS in maritime industry",
-    "life-safety requirements for energy sector ICS systems",
-    "national standards for life-safety in ICS for critical infrastructure"
+    "Life-safety engineering principles in OT cybersecurity for energy sector critical infrastructure",
+    "Regulatory gaps in safety over security for water treatment plants",
+    "Application of life-cycle safety engineering in maritime critical infrastructure cyber resilience"
   ]
 }
