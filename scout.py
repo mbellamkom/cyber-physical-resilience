@@ -51,6 +51,9 @@ EXTRACTOR_MAX_CHARS   = 3000  # Truncation limit to stay within Ollama context
 # --- PERSISTENT TRIAGE TALLY ---
 VERDICTS_FILE = Path("D:/Docker/extractor/stats/research_verdicts.json")
 
+# --- DISCORD WEBHOOK CONFIG ---
+WEBHOOK_MAX_RETRIES = 3  # Max attempts before giving up on a webhook post
+
 # --- MASTER QUERIES FALLBACK ---
 # Used when both the cache is missing and the Gemini API is unavailable (e.g. 429).
 MASTER_SCHOLAR_QUERIES = [
@@ -367,6 +370,76 @@ def enrich_item(item: dict) -> dict:
     return item
 
 
+def recheck_low_sources(rules_text: str):
+    """Re-evaluates all previously LOW-scored URLs using current prompts.
+    Appends correction rows to seen_sources.md for upgrades — never edits originals.
+    Fires Discord webhook for any source upgraded to HIGH or MEDIUM.
+    """
+    if not MEMORY_FILE.exists():
+        rl.log("[Recheck] seen_sources.md not found — nothing to recheck.")
+        return
+
+    rl.log("[Recheck] Scanning seen_sources.md for LOW-scored sources...")
+    low_entries = []
+    with open(MEMORY_FILE, "r", encoding="utf-8") as f:
+        for line in f:
+            if "| \U0001f534 LOW |" in line or "| \U0001f534 LOW" in line:
+                # Parse: | [title](link) | date | badge relevance | rationale |
+                m = re.match(r'\| \[(.+?)\]\((.+?)\) \|', line)
+                if m:
+                    low_entries.append({"title": m.group(1), "link": m.group(2)})
+
+    if not low_entries:
+        rl.log("[Recheck] No LOW entries found.")
+        return
+
+    rl.log(f"[Recheck] Found {len(low_entries)} LOW sources to re-evaluate.")
+    upgraded = 0
+    confirmed_low = 0
+
+    for item in low_entries:
+        title, link = item["title"], item["link"]
+        rl.log(f"[Recheck] Checking: {title[:60]}")
+
+        # Try hub enrichment first
+        snippet = fetch_full_text(link) or title
+        item["snippet"] = snippet
+        item["enriched"] = bool(fetch_full_text(link))
+
+        # Run through Bouncer (single-item batch)
+        results = evaluate_with_ollama([item])
+        rel, rat = "LOW", "Re-evaluated: still LOW."
+        if results and isinstance(results, list) and len(results) > 0:
+            rel = results[0].get("relevance", "LOW")
+            rat = results[0].get("rationale", rat)
+
+        if rel in ("HIGH", "MEDIUM"):
+            badge = SCORE_EMOJI.get(rel, "")
+            rl.log(f"[Recheck] UPGRADED: {badge} {rel}: {title[:50]}")
+            # Append correction row (original LOW row preserved)
+            today = datetime.datetime.now().strftime("%Y-%m-%d")
+            with open(MEMORY_FILE, "a", encoding="utf-8") as f:
+                f.write(f"| [{title}]({link}) | {today} | {badge} {rel} | [RE-EVAL] {rat} |\n")
+            # Notify Discord with force=True (bypass seen gate)
+            notify_detailed(title, link, rel, f"[RE-EVAL] {rat}", force=True)
+            upsert_discovery(title, link, rel, f"[RE-EVAL] {rat}")
+            upgraded += 1
+        else:
+            confirmed_low += 1
+            rl.log(f"[Recheck] Confirmed LOW: {title[:50]}")
+
+        time.sleep(2)  # Be polite to Ollama between items
+
+    print("")
+    print("=" * 60)
+    print("RECHECK SUMMARY")
+    print("-" * 60)
+    print(f"  Upgraded to HIGH/MEDIUM : {upgraded}")
+    print(f"  Confirmed LOW           : {confirmed_low}")
+    print(f"  Total rechecked         : {len(low_entries)}")
+    print("=" * 60)
+
+
 def ingest_triage_logs(qdrant):
     """Parses triage_log.md and rejected_sources.md and upserts entries into triage_memory."""
     entries = []
@@ -421,13 +494,55 @@ def log_discovery(title, link, relevance, rationale):
     upsert_discovery(title, link, relevance, rationale)
     mirror_logs()
 
-def notify_detailed(title, link, score, rationale):
-    """Sends scored alert to Discord."""
-    status_icon = "🟢" if score == "HIGH" else "🟡"
-    if is_new_discovery(link):
-        message = f"🔍 **Scout Alert:** [{status_icon} {score}]\n**Title:** {title}\n**Link:** <{link}>\n\n**Agent Justification:** {rationale}"
-        if WEBHOOK_URL: DiscordWebhook(url=WEBHOOK_URL, content=message).execute()
-        log_discovery(title, link, score, rationale)
+def send_webhook(message: str, title: str = "") -> bool:
+    """Sends a Discord webhook with retry on rate limits and transient errors.
+    Prints CMD confirmation on success. Returns True on success.
+    """
+    if not WEBHOOK_URL:
+        return False
+    label = title[:50] if title else message[:50]
+    for attempt in range(1, WEBHOOK_MAX_RETRIES + 1):
+        try:
+            resp = DiscordWebhook(url=WEBHOOK_URL, content=message).execute()
+            # DiscordWebhook.execute() returns the requests.Response object
+            if resp is not None and hasattr(resp, "status_code"):
+                if resp.status_code == 429:
+                    # Rate limited — read retry_after and wait
+                    try:
+                        retry_after = resp.json().get("retry_after", 5)
+                    except Exception:
+                        retry_after = 5
+                    rl.log(f"[Discord] Rate limited. Retrying in {retry_after}s (attempt {attempt}/{WEBHOOK_MAX_RETRIES})...")
+                    time.sleep(retry_after)
+                    continue
+                elif resp.status_code in (200, 204):
+                    print(f"[Discord] Webhook fired: {label}")
+                    return True
+            # Unknown/error status — fall through to retry
+            rl.log(f"[Discord] Unexpected response (attempt {attempt}): {getattr(resp, 'status_code', 'N/A')}")
+        except Exception as exc:
+            rl.log(f"[Discord] Error on attempt {attempt}/{WEBHOOK_MAX_RETRIES}: {exc}")
+        if attempt < WEBHOOK_MAX_RETRIES:
+            time.sleep(5)
+    rl.log(f"[!] Webhook failed after {WEBHOOK_MAX_RETRIES} attempts: {label}")
+    return False
+
+
+def notify_detailed(title, link, score, rationale, force=False):
+    """Sends scored alert to Discord and logs the discovery.
+    Set force=True to bypass the is_new_discovery gate (used by --recheck).
+    """
+    status_icon = "\U0001f7e2" if score == "HIGH" else "\U0001f7e1"
+    if force or is_new_discovery(link):
+        message = (
+            f"\U0001f50d **Scout Alert:** [{status_icon} {score}]\n"
+            f"**Title:** {title}\n"
+            f"**Link:** <{link}>\n\n"
+            f"**Agent Justification:** {rationale}"
+        )
+        send_webhook(message, title=title)
+        if not force:
+            log_discovery(title, link, score, rationale)
 
 def log_rejection(title, link, rationale):
     """Logs low-quality hits to rejected_sources.md before marking them as seen."""
@@ -796,6 +911,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Scout Agent: Cyber-Physical Resilience Research Pipeline")
     parser.add_argument("--refresh", action="store_true",
                         help="Bypass the local cache and force a new DeepSeek brainstorm.")
+    parser.add_argument("--recheck", action="store_true",
+                        help="Re-evaluate all past LOW sources with new prompts. Appends corrections; never overwrites history.")
     args = parser.parse_args()
 
     # Migrate legacy seen_sources.txt to seen_sources.md if it exists
@@ -808,6 +925,14 @@ if __name__ == "__main__":
     _backfill_scout_memory()
 
     rules = load_rules()
+
+    # --recheck mode: re-evaluate past LOW sources and exit (skip normal search)
+    if args.recheck:
+        rl.log("[*] --recheck mode: re-evaluating past LOW sources with current prompts...")
+        recheck_low_sources(rules)
+        rl.log("[*] Recheck complete. Run 'python scout.py' for a normal search pass.")
+        sys.exit(0)
+
     topics_env = os.getenv("RESEARCH_TOPICS", "NIST 800-82 safety over security, FEMA Lifelines Cyber Dependency")
     topics_list = [t.strip() for t in topics_env.split(",") if t.strip()]
 
