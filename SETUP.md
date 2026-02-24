@@ -9,6 +9,9 @@ Before you begin, ensure you have the following installed:
 * A **Google Gemini API Key** (Get one from [Google AI Studio](https://aistudio.google.com/))
 * A **Discord Webhook URL** (If you want notifications from the Scout script in Discord)
 
+> **Shell Environment:** This project runs inside a Python virtual environment (`venv`) that is configured to activate automatically in **CMD** (`cmd.exe`). Always use CMD-compatible syntax — do **not** use PowerShell-specific commands (e.g. `Invoke-WebRequest`, `;` chaining, `$variables`). Use `curl`, `&&`, and standard batch syntax instead.
+
+
 ## 1. Installation
 
 Clone this repository to your local machine:

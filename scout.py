@@ -35,9 +35,21 @@ QUERY_CACHE = LOGS_DIR / "query_cache.json"
 # --- QDRANT / LOCAL RAG CONFIG ---
 QDRANT_PATH = os.getenv("QDRANT_LOCAL_PATH", str(RESEARCH_PATH / ".qdrant_db"))
 TRIAGE_COLLECTION = "triage_memory"
+SCOUT_COLLECTION = "scout_memory"
 OLLAMA_URL = "http://localhost:11434"
 EMBED_MODEL = "nomic-embed-text"  # 768-dim, matches global_resilience_vault
 VECTOR_SIZE = 768
+
+# --- D-DRIVE MARKDOWN MIRROR ---
+DB_MIRROR_DIR = Path(os.getenv("DB_MIRROR_PATH", "D:/Cyber_Physical_DBs"))
+
+# --- EXTRACTOR HUB CONFIG ---
+EXTRACTOR_HUB_URL     = "http://localhost:8003"
+EXTRACTOR_HUB_ENABLED = True
+EXTRACTOR_MAX_CHARS   = 3000  # Truncation limit to stay within Ollama context
+
+# --- PERSISTENT TRIAGE TALLY ---
+VERDICTS_FILE = Path("D:/Docker/extractor/stats/research_verdicts.json")
 
 # --- MASTER QUERIES FALLBACK ---
 # Used when both the cache is missing and the Gemini API is unavailable (e.g. 429).
@@ -82,6 +94,16 @@ class RunLogger:
     def __init__(self):
         self._ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
         self._counts = {"evaluated": 0, "high_medium": 0, "low": 0, "triage": 0, "sieve": 0}
+        # Load lifetime verdicts from D: drive (creates defaults if file missing)
+        self._lifetime = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
+        if VERDICTS_FILE.exists():
+            try:
+                loaded = json.loads(VERDICTS_FILE.read_text(encoding="utf-8"))
+                self._lifetime["HIGH"]   = int(loaded.get("HIGH",   0))
+                self._lifetime["MEDIUM"] = int(loaded.get("MEDIUM", 0))
+                self._lifetime["LOW"]    = int(loaded.get("LOW",    0))
+            except Exception:
+                pass
         self._f = open(RUN_LOG, "a", encoding="utf-8")
         self._f.write(f"\n---\n\n## 🚀 Run — {self._ts}\n\n")
         self._f.flush()
@@ -99,12 +121,15 @@ class RunLogger:
         self._f.flush()
 
     def score(self, relevance: str):
-        """Track a scored result."""
+        """Track a scored result (session + lifetime)."""
         self._counts["evaluated"] += 1
         if relevance in ("HIGH", "MEDIUM"):
             self._counts["high_medium"] += 1
         elif relevance == "LOW":
             self._counts["low"] += 1
+        # Increment lifetime counter
+        if relevance in self._lifetime:
+            self._lifetime[relevance] += 1
 
     def triage(self):
         self._counts["triage"] += 1
@@ -112,8 +137,25 @@ class RunLogger:
     def sieve(self):
         self._counts["sieve"] += 1
 
+    def _save_verdicts(self):
+        """Persists lifetime HIGH/MEDIUM/LOW counts to D: drive."""
+        try:
+            VERDICTS_FILE.parent.mkdir(parents=True, exist_ok=True)
+            payload = {
+                "HIGH":         self._lifetime["HIGH"],
+                "MEDIUM":       self._lifetime["MEDIUM"],
+                "LOW":          self._lifetime["LOW"],
+                "last_updated": self._ts,
+            }
+            VERDICTS_FILE.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        except Exception as e:
+            print(f"[!] Could not save verdicts: {e}")
+
     def _close(self):
-        c = self._counts
+        self._save_verdicts()
+        c  = self._counts
+        lt = self._lifetime
+        total = lt["HIGH"] + lt["MEDIUM"] + lt["LOW"]
         self._f.write("\n#### 📊 Session Summary\n\n")
         self._f.write("| Metric | Count |\n| :--- | :--- |\n")
         self._f.write(f"| Total evaluated | {c['evaluated']} |\n")
@@ -123,8 +165,112 @@ class RunLogger:
         self._f.write(f"| ⚪ Sieve rejections | {c['sieve']} |\n\n")
         self._f.flush()
         self._f.close()
+        # CMD-friendly lifetime summary
+        print("")
+        print("=" * 60)
+        print("LIFETIME RESEARCH STATS (D:\\Docker\\extractor\\stats\\)")
+        print("-" * 60)
+        print(f"  HIGH   : {lt['HIGH']}")
+        print(f"  MEDIUM : {lt['MEDIUM']}")
+        print(f"  LOW    : {lt['LOW']}")
+        print(f"  TOTAL  : {total}")
+        print(f"  Last updated: {self._ts}")
+        print("=" * 60)
 
 rl = RunLogger()
+
+# --- QDRANT HELPERS ---
+
+def _get_qdrant():
+    """Returns a Qdrant client with both collections initialized."""
+    client = QdrantClient(path=QDRANT_PATH)
+    for name in (TRIAGE_COLLECTION, SCOUT_COLLECTION):
+        try:
+            client.get_collection(name)
+        except Exception:
+            client.create_collection(
+                collection_name=name,
+                vectors_config=models.VectorParams(size=VECTOR_SIZE, distance=models.Distance.COSINE)
+            )
+    return client
+
+def upsert_discovery(title, link, relevance, rationale, source="unknown"):
+    """Embeds and upserts a discovery into scout_memory. Deduplicates by URL."""
+    try:
+        vector = embed_text(f"{title} {rationale}")
+        if not vector:
+            return
+        point_id = str(uuid.uuid5(uuid.NAMESPACE_URL, link))
+        payload = {
+            "title": title, "link": link, "relevance": relevance,
+            "rationale": rationale, "source": source,
+            "date": datetime.datetime.now().strftime("%Y-%m-%d"),
+            "run_ts": rl._ts
+        }
+        q = _get_qdrant()
+        q.upsert(collection_name=SCOUT_COLLECTION,
+                 points=[models.PointStruct(id=point_id, vector=vector, payload=payload)])
+        q.close()
+    except Exception as e:
+        rl.log(f"[!] Qdrant upsert failed: {e}")
+
+def _backfill_scout_memory():
+    """One-time backfill: reads seen_sources.md and upserts historic entries."""
+    if not MEMORY_FILE.exists():
+        return
+    try:
+        q = _get_qdrant()
+        existing = {str(p.id) for p in q.scroll(SCOUT_COLLECTION, limit=10000)[0]}
+        count = 0
+        with open(MEMORY_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                if not line.startswith("| ["):
+                    continue
+                # Parse: | [title](link) | date | badge relevance | rationale |
+                parts = [p.strip() for p in line.strip().strip("|").split("|")]
+                if len(parts) < 4:
+                    continue
+                # Extract title and link from "[title](link)"
+                m = re.match(r'\[(.+?)\]\((.+?)\)', parts[0])
+                if not m:
+                    continue
+                title, link = m.group(1), m.group(2)
+                # Relevance may have emoji badge prefix
+                rel_raw = parts[2].strip()
+                relevance = rel_raw.split()[-1] if rel_raw else "LOW"
+                rationale = parts[3].strip() if len(parts) > 3 else ""
+                point_id = str(uuid.uuid5(uuid.NAMESPACE_URL, link))
+                if point_id in existing:
+                    continue
+                vector = embed_text(f"{title} {rationale}")
+                if vector:
+                    q.upsert(collection_name=SCOUT_COLLECTION, points=[
+                        models.PointStruct(id=point_id, vector=vector,
+                            payload={"title": title, "link": link, "relevance": relevance,
+                                     "rationale": rationale, "source": "backfill",
+                                     "date": "legacy", "run_ts": "backfill"})
+                    ])
+                    count += 1
+        q.close()
+        if count:
+            rl.log(f"[+] Backfilled {count} historic entries into '{SCOUT_COLLECTION}'.")
+    except Exception as e:
+        rl.log(f"[!] Backfill failed: {e}")
+
+# NOTE: _backfill_scout_memory() is called after embed_text is defined (in __main__ block)
+
+# --- D-DRIVE MIRROR ---
+import shutil
+
+def mirror_logs():
+    """Copies all markdown log files to DB_MIRROR_DIR. Silently skips if unavailable."""
+    try:
+        DB_MIRROR_DIR.mkdir(parents=True, exist_ok=True)
+        for src in (MEMORY_FILE, REJECTED_LOG, TRIAGE_LOG, RUN_LOG):
+            if src.exists():
+                shutil.copy2(src, DB_MIRROR_DIR / src.name)
+    except Exception:
+        pass  # Mirror drive unavailable — script continues uninterrupted
 
 
 def load_rules():
@@ -184,8 +330,45 @@ def embed_text(text):
         print(f"[!] Embedding failed: {e}")
     return None
 
+
+# --- EXTRACTOR HUB HELPERS ---
+
+def fetch_full_text(url: str):
+    """Fetches full-text markdown from the Extractor Hub (port 8003).
+    Returns truncated markdown string on success, None on any failure.
+    CPU-only -- hub is configured with EXTRACTOR_GPU=cpu.
+    """
+    if not EXTRACTOR_HUB_ENABLED:
+        return None
+    try:
+        resp = requests.post(
+            f"{EXTRACTOR_HUB_URL}/extract",
+            json={"uri": url},
+            timeout=15,
+        )
+        if resp.status_code == 200:
+            md = resp.json().get("markdown", "")
+            return md[:EXTRACTOR_MAX_CHARS] if md else None
+    except Exception:
+        pass
+    return None
+
+
+def enrich_item(item: dict) -> dict:
+    """Replaces item['snippet'] with full-text from the hub if available.
+    Sets item['enriched'] = True/False so callers can log the outcome.
+    """
+    full_text = fetch_full_text(item.get("link", ""))
+    if full_text:
+        item["snippet"] = full_text
+        item["enriched"] = True
+    else:
+        item["enriched"] = False
+    return item
+
+
 def ingest_triage_logs(qdrant):
-    """Parses triage_log.md and rejected_sources.md and upserts recent entries into triage_memory."""
+    """Parses triage_log.md and rejected_sources.md and upserts entries into triage_memory."""
     entries = []
     for log_file in [TRIAGE_LOG, REJECTED_LOG]:
         if not log_file.exists():
@@ -193,11 +376,15 @@ def ingest_triage_logs(qdrant):
         with open(log_file, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
-                if line.startswith("- **["):  # formatted log entry
+                # Match new format: ### 🔴 LOW — [Title](url)
+                if line.startswith("### ") and "\u2014" in line:
+                    entries.append(line)
+                # Match legacy format: - **[date]** [title](url)
+                elif line.startswith("- **["):
                     entries.append(line)
 
     if not entries:
-        print("[*] No triage log entries to ingest.")
+        rl.log("[*] No triage log entries to ingest.")
         return
 
     points = []
@@ -225,12 +412,14 @@ def is_new_discovery(link, refresh_days=30):
     return True
 
 def log_discovery(title, link, relevance, rationale):
-    """Records a new discovery in the memory file (seen_sources.md)."""
+    """Records a new discovery in seen_sources.md AND Qdrant scout_memory."""
     today = datetime.datetime.now().strftime("%Y-%m-%d")
     badge = SCORE_EMOJI.get(relevance, "")
     with open(MEMORY_FILE, "a", encoding="utf-8") as f:
         f.write(f"| [{title}]({link}) | {today} | {badge} {relevance} | {rationale} |\n")
     rl.score(relevance)
+    upsert_discovery(title, link, relevance, rationale)
+    mirror_logs()
 
 def notify_detailed(title, link, score, rationale):
     """Sends scored alert to Discord."""
@@ -277,16 +466,40 @@ def python_sieve(title, snippet):
 # --- STAGE 2: LOCAL BOUNCER (OLLAMA) ---
 def evaluate_with_ollama(snippets_bulk):
     """Sends a batch of snippets to local DeepSeek."""
+    # Build the serialised content block outside the f-string to avoid
+    # Python misinterpreting {{...}} inside the comprehension as a set literal.
+    content_list = [
+        {"index": i, "title": s["title"], "content": s["snippet"]}
+        for i, s in enumerate(snippets_bulk)
+    ]
+    content_json = json.dumps(content_list, indent=2)
     prompt = f"""
-You are an expert triage assistant. Your goal is to evaluate these search snippets and identify the nexus between cybersecurity and physical safety/OT. If a document focuses solely on IT-standard data security while ignoring physical impact, score it LOW.
-If it explicitly mentions major frameworks (NIST, ISO) but is completely silent on physical safety/OT-nexus, score it SILENT_ANOMALY.
+You are a research triage assistant for a study on Dynamic Risk Management in cyber-physical systems.
+Evaluate each search snippet using the following STRICT scoring rules:
+
+SCORING RULES:
+- HIGH (Positive Baseline): The document explicitly discusses the tension between safety and security,
+  system overrides, emergency access, fail-safe/fail-open behaviors, or dynamic risk management in
+  an OT/ICS or cyber-physical context as its PRIMARY focus.
+- HIGH (Abstract/Paywall): The content appears to be an abstract or summary (e.g. from a paywalled
+  academic paper). Score HIGH if it strongly implies the full document covers life-safety, OT/ICS
+  risk, emergency overrides, or the safety-security intersection. Do NOT penalize abstracts for
+  lacking specific architectural details — reward strong thematic signal.
+- HIGH (Negative Baseline - STRUCTURAL_OMISSION): The document is a major framework, standard, or
+  regulatory instrument governing OT/ICS or cyber-physical systems that is COMPLETELY SILENT on
+  human life-safety, emergency egress, or physical consequences. These are valuable as evidence of
+  governance gaps. Flag rationale with [STRUCTURAL_OMISSION].
+- MEDIUM: The document discusses ICS resilience, emergency workflows, or cyber-physical operations
+  but only mentions safety vs. security overrides tangentially or as a secondary point.
+- LOW: The document addresses only IT-standard data security (data privacy, encryption, firewalls,
+  financial fraud) with zero physical safety or OT/ICS relevance.
 
 SNIPPETS:
-{json.dumps([{"index": i, "title": s["title"], "snippet": s["snippet"]} for i, s in enumerate(snippets_bulk)], indent=2)}
+{content_json}
 
 Evaluate each snippet. Output your answer as a JSON object with a single key "results" containing an array:
 {{"results": [
-  {{"index": 0, "relevance": "HIGH" or "MEDIUM" or "LOW" or "SILENT_ANOMALY", "rationale": "One concise sentence."}}
+  {{"index": 0, "relevance": "HIGH" or "MEDIUM" or "LOW", "rationale": "One concise sentence. Prefix with [STRUCTURAL_OMISSION] if applicable."}}
 ]}}
 """
     try:
@@ -338,9 +551,18 @@ def process_final_score(item, rel, rat):
         log_rejection(title, link, rat)
 
 def process_batch(batch, rules_text):
-    """Processes a batch of snippets through Stage 2 (Ollama) and Stage 3 (DeepSeek)."""
+    """Processes a batch through Stage 1.5 (Hub enrichment), Stage 2 (Ollama), Stage 3 (DeepSeek)."""
     if not batch: return
     rl.log(f"[*] Processing batch of {len(batch)} snippets through Local Bouncer...")
+
+    # --- STAGE 1.5: EXTRACTOR HUB ENRICHMENT ---
+    enriched_count = 0
+    for item in batch:
+        enrich_item(item)
+        if item.get("enriched"):
+            enriched_count += 1
+    rl.log(f"[Hub] Enriched {enriched_count}/{len(batch)} items with full text "
+           f"({len(batch) - enriched_count} fallback to snippet).")
 
     ollama_results = evaluate_with_ollama(batch)
 
@@ -350,6 +572,7 @@ def process_batch(batch, rules_text):
             rel_data = evaluate_snippet(item["title"], item["snippet"], rules_text)
             process_final_score(item, rel_data.get("relevance", "LOW"), rel_data.get("rationale", "No rationale."))
             time.sleep(3)
+        rl._save_verdicts()
         return
 
     try:
@@ -376,6 +599,9 @@ def process_batch(batch, rules_text):
                     time.sleep(3)
     except Exception as e:
         rl.log(f"[!] Error parsing batch results: {e}")
+
+    # Persist lifetime verdicts to D: drive after every batch
+    rl._save_verdicts()
 
 # --- GENAI CAPABILITIES ---
 def generate_queries(topics):
@@ -453,11 +679,12 @@ Output ONLY valid JSON with no extra text:
 def evaluate_snippet(title, snippet, rules_text):
     """Uses local DeepSeek-R1 via Ollama to screen a snippet with a strict boolean filter."""
     rl.log("  [*] Using Local DeepSeek-R1 for Evaluation...")
-    prompt = f"""Does this text discuss life-safety, fail-safe mechanisms, or the intersection of engineering safety and cybersecurity in industrial/OT environments?
-Respond ONLY with \"YES\" or \"NO\", followed by a one-sentence technical reason.
+    prompt = f"""Does this text explicitly discuss, OR strongly indicate (if it is an abstract or paywall summary), that the full document covers life-safety, fail-safe mechanisms, or the intersection of engineering safety and cybersecurity in industrial/OT environments?
+If the text is clearly an abstract, judge based on thematic signal and intent, not the presence of specific architectural keywords.
+Respond ONLY with "YES" or "NO", followed by a one-sentence technical reason.
 
 Title: {title}
-Snippet: {snippet}"""
+Content: {snippet}"""
     try:
         resp = requests.post(
             f"{OLLAMA_URL}/api/generate",
@@ -576,6 +803,9 @@ if __name__ == "__main__":
     if legacy.exists() and not MEMORY_FILE.exists():
         legacy.rename(MEMORY_FILE)
         rl.log("[*] Migrated seen_sources.txt -> seen_sources.md")
+
+    # Backfill historic entries now that embed_text is defined
+    _backfill_scout_memory()
 
     rules = load_rules()
     topics_env = os.getenv("RESEARCH_TOPICS", "NIST 800-82 safety over security, FEMA Lifelines Cyber Dependency")
