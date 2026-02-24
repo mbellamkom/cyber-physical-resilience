@@ -15,3 +15,6 @@ discord-webhook    # For sending discovery and status alerts directly to a Disco
 
 # --- Vector Database & AI Memory ---
 qdrant-client      # For interacting with the Qdrant vector database (local disk-persistence)
+
+# --- Dev Tools ---
+pre-commit         # For running pre-commit hooks
