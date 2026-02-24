@@ -17,7 +17,12 @@ version: "3.9"
 
 services:
   extractor-manager:
-    image: extractor-manager:latest
+    build:
+      # Build context is the project root so the Dockerfile can reach
+      # both containers/ and common/ as sibling directories.
+      context: .
+      dockerfile: containers/extractor_manager_service/Dockerfile
+    image: extractor-manager:latest # Tags the built image for reuse
     container_name: extractor-manager
 
     # --- Port binding ---
@@ -30,7 +35,7 @@ services:
 
     # --- Environment ---
     env_file:
-      - .env           # Loads NUM_EXTRACTOR_WORKERS, EXTRACTOR_GPU, etc.
+      - .env # Loads NUM_EXTRACTOR_WORKERS, EXTRACTOR_GPU, etc.
     environment:
       # Explicit overrides (take precedence over .env values)
       - EXTRACTOR_GPU=cpu
@@ -60,4 +65,4 @@ services:
 
 networks:
   newsbot-network:
-    external: true   # Created by setup-extractor.ps1 or docker-compose.network.yml
+    external: true # Created by setup-extractor.ps1 or docker-compose.network.yml
