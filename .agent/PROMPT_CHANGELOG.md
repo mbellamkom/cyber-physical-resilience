@@ -26,6 +26,8 @@ Before requesting `APPROVED` for any Restricted Zone operation, the agent **must
 A single `APPROVED` is scoped only to the files named in the immediately preceding authorization request. No implicit extensions are permitted.
 
 > Researcher Note: As helpful as this was, it was still technically a violation of the rules. I like the emergent behavior the agent is showing, but I still need to know what is happening to the files in the .agent directory!
+
+> Additonal Resaercher's Note: This update was committed to the feature/code-updates branch instead of the agent-logic-refinements branch where it should have gone since it was a logic update. I forgot what branch we were on and committed it to the wrong one. This update applies to all branches though.
 ---
 
 ## [2026-02-23] - Governance Directive 5: Version Control Accountability (The Push Mandate)
