@@ -481,6 +481,10 @@ SCORING RULES:
 - HIGH (Positive Baseline): The document explicitly discusses the tension between safety and security,
   system overrides, emergency access, fail-safe/fail-open behaviors, or dynamic risk management in
   an OT/ICS or cyber-physical context as its PRIMARY focus.
+- HIGH (Abstract/Paywall): The content appears to be an abstract or summary (e.g. from a paywalled
+  academic paper). Score HIGH if it strongly implies the full document covers life-safety, OT/ICS
+  risk, emergency overrides, or the safety-security intersection. Do NOT penalize abstracts for
+  lacking specific architectural details — reward strong thematic signal.
 - HIGH (Negative Baseline - STRUCTURAL_OMISSION): The document is a major framework, standard, or
   regulatory instrument governing OT/ICS or cyber-physical systems that is COMPLETELY SILENT on
   human life-safety, emergency egress, or physical consequences. These are valuable as evidence of
@@ -675,11 +679,12 @@ Output ONLY valid JSON with no extra text:
 def evaluate_snippet(title, snippet, rules_text):
     """Uses local DeepSeek-R1 via Ollama to screen a snippet with a strict boolean filter."""
     rl.log("  [*] Using Local DeepSeek-R1 for Evaluation...")
-    prompt = f"""Does this text discuss life-safety, fail-safe mechanisms, or the intersection of engineering safety and cybersecurity in industrial/OT environments?
-Respond ONLY with \"YES\" or \"NO\", followed by a one-sentence technical reason.
+    prompt = f"""Does this text explicitly discuss, OR strongly indicate (if it is an abstract or paywall summary), that the full document covers life-safety, fail-safe mechanisms, or the intersection of engineering safety and cybersecurity in industrial/OT environments?
+If the text is clearly an abstract, judge based on thematic signal and intent, not the presence of specific architectural keywords.
+Respond ONLY with "YES" or "NO", followed by a one-sentence technical reason.
 
 Title: {title}
-Snippet: {snippet}"""
+Content: {snippet}"""
     try:
         resp = requests.post(
             f"{OLLAMA_URL}/api/generate",
