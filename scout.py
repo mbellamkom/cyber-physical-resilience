@@ -1,8 +1,10 @@
 import os
 import re
+import sys
 import time
 import json
 import uuid
+import atexit
 import datetime
 import requests
 from pathlib import Path
@@ -23,11 +25,10 @@ load_dotenv()
 RESEARCH_PATH = Path(os.getenv("RESEARCH_PATH") or ".")
 LOGS_DIR = RESEARCH_PATH / "logs"
 LOGS_DIR.mkdir(exist_ok=True)
-LOGS_DIR = RESEARCH_PATH / "logs"
-LOGS_DIR.mkdir(exist_ok=True)
-MEMORY_FILE = LOGS_DIR / "seen_sources.txt"
+MEMORY_FILE = LOGS_DIR / "seen_sources.md"
 REJECTED_LOG = LOGS_DIR / "rejected_sources.md"
 TRIAGE_LOG = LOGS_DIR / "triage_log.md"
+RUN_LOG = LOGS_DIR / "run_log.md"
 
 QUERY_CACHE = LOGS_DIR / "query_cache.json"
 
@@ -55,13 +56,75 @@ WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 RULES_PATH = Path(os.getenv("AGENT_RULES_PATH", RESEARCH_PATH / ".agent" / "rules" / "PROJECT_RULES.md"))
 
 # Ensure files exist
+if not MEMORY_FILE.exists():
+    with open(MEMORY_FILE, "w", encoding="utf-8") as f:
+        f.write("# Scout Smart Memory Log\n")
+        f.write("> Tracks every URL reviewed. Prevents duplicate evaluations across runs.\n\n")
+        f.write("| Title | Date | Relevance | Rationale |\n")
+        f.write("| :--- | :--- | :--- | :--- |\n")
+
 if not REJECTED_LOG.exists():
     with open(REJECTED_LOG, "w", encoding="utf-8") as f:
-        f.write("# Rejected Sources Log\n*These documents were scored as LOW relevance by the Cloud Agent (Gemini).* \n\n")
+        f.write("# Rejected Sources Log\n")
+        f.write("> Documents scored **LOW** by the Scout Agent — not relevant to the core thesis.\n\n")
 
 if not TRIAGE_LOG.exists():
     with open(TRIAGE_LOG, "w", encoding="utf-8") as f:
-        f.write("# Triage Log\n*These documents were scoped out by the Local Bouncer (DeepSeek).* \n\n")
+        f.write("# Triage Log\n")
+        f.write("> Documents filtered by the **Local Bouncer** (DeepSeek) before reaching Gemini confirmation.\n\n")
+
+# --- RUN LOGGER ---
+SCORE_EMOJI = {"HIGH": "🟢", "MEDIUM": "🟡", "LOW": "🔴", "SILENT_ANOMALY": "🔵"}
+
+class RunLogger:
+    """Writes structured markdown to run_log.md while also printing to the terminal."""
+
+    def __init__(self):
+        self._ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        self._counts = {"evaluated": 0, "high_medium": 0, "low": 0, "triage": 0, "sieve": 0}
+        self._f = open(RUN_LOG, "a", encoding="utf-8")
+        self._f.write(f"\n---\n\n## 🚀 Run — {self._ts}\n\n")
+        self._f.flush()
+        atexit.register(self._close)
+
+    def log(self, msg: str):
+        """Print to terminal AND append to run_log.md."""
+        print(msg)
+        self._f.write(msg + "\n")
+        self._f.flush()
+
+    def section(self, icon: str, title: str):
+        """Write a markdown H3 section header."""
+        self._f.write(f"\n### {icon} {title}\n\n")
+        self._f.flush()
+
+    def score(self, relevance: str):
+        """Track a scored result."""
+        self._counts["evaluated"] += 1
+        if relevance in ("HIGH", "MEDIUM"):
+            self._counts["high_medium"] += 1
+        elif relevance == "LOW":
+            self._counts["low"] += 1
+
+    def triage(self):
+        self._counts["triage"] += 1
+
+    def sieve(self):
+        self._counts["sieve"] += 1
+
+    def _close(self):
+        c = self._counts
+        self._f.write("\n#### 📊 Session Summary\n\n")
+        self._f.write("| Metric | Count |\n| :--- | :--- |\n")
+        self._f.write(f"| Total evaluated | {c['evaluated']} |\n")
+        self._f.write(f"| 🟢🟡 HIGH / MEDIUM | {c['high_medium']} |\n")
+        self._f.write(f"| 🔴 LOW / Rejected | {c['low']} |\n")
+        self._f.write(f"| 🔵 Triage (Bouncer) rejections | {c['triage']} |\n")
+        self._f.write(f"| ⚪ Sieve rejections | {c['sieve']} |\n\n")
+        self._f.flush()
+        self._f.close()
+
+rl = RunLogger()
 
 
 def load_rules():
@@ -149,7 +212,7 @@ def ingest_triage_logs(qdrant):
 
     if points:
         qdrant.upsert(collection_name=TRIAGE_COLLECTION, points=points)
-        print(f"[+] Ingested {len(points)} triage entries into '{TRIAGE_COLLECTION}'.")
+        rl.log(f"[+] Ingested {len(points)} triage entries into '{TRIAGE_COLLECTION}'.")
 
 def is_new_discovery(link, refresh_days=30):
     """Checks memory file to avoid alerting on seen links."""
@@ -162,10 +225,12 @@ def is_new_discovery(link, refresh_days=30):
     return True
 
 def log_discovery(title, link, relevance, rationale):
-    """Records a new discovery in the memory file."""
+    """Records a new discovery in the memory file (seen_sources.md)."""
     today = datetime.datetime.now().strftime("%Y-%m-%d")
+    badge = SCORE_EMOJI.get(relevance, "")
     with open(MEMORY_FILE, "a", encoding="utf-8") as f:
-        f.write(f"| [{title}]({link}) | {today} | {relevance} | {rationale} |\n")
+        f.write(f"| [{title}]({link}) | {today} | {badge} {relevance} | {rationale} |\n")
+    rl.score(relevance)
 
 def notify_detailed(title, link, score, rationale):
     """Sends scored alert to Discord."""
@@ -176,20 +241,26 @@ def notify_detailed(title, link, score, rationale):
         log_discovery(title, link, score, rationale)
 
 def log_rejection(title, link, rationale):
-    """Logs low-quality hits to a local markdown file before marking them as seen."""
+    """Logs low-quality hits to rejected_sources.md before marking them as seen."""
     if is_new_discovery(link):
         today = datetime.datetime.now().strftime("%Y-%m-%d")
         with open(REJECTED_LOG, "a", encoding="utf-8") as f:
-            f.write(f"- **[{today}]** [{title}]({link})\n  - *Rationale:* {rationale}\n\n")
+            f.write(f"### 🔴 LOW — [{title}]({link})\n")
+            f.write(f"- **Date:** {today}\n")
+            f.write(f"- **Rationale:** {rationale}\n\n")
         log_discovery(title, link, "LOW", rationale)
 
 def log_triage_rejection(title, link, score, rationale):
-    """Logs local Bouncer rejections to triage_log.md."""
+    """Logs Local Bouncer rejections to triage_log.md."""
     if is_new_discovery(link):
+        badge = SCORE_EMOJI.get(score, "")
         today = datetime.datetime.now().strftime("%Y-%m-%d")
         with open(TRIAGE_LOG, "a", encoding="utf-8") as f:
-            f.write(f"- **[{today}]** [{score}] [{title}]({link})\n  - *Rationale:* {rationale}\n\n")
+            f.write(f"### {badge} {score} — [{title}]({link})\n")
+            f.write(f"- **Date:** {today}\n")
+            f.write(f"- **Rationale:** {rationale}\n\n")
         log_discovery(title, link, score, rationale)
+        rl.triage()
 
 # --- STAGE 1: PYTHON SIEVE ---
 SIEVE_KEYWORDS = [
@@ -247,17 +318,18 @@ Evaluate each snippet. Output your answer as a JSON object with a single key "re
                 if match:
                     return json.loads(match.group())
             except json.JSONDecodeError as e:
-                print(f"[!] Local Bouncer parse failed: {e}")
+                rl.log(f"[!] Local Bouncer parse failed: {e}")
     except Exception as e:
-        print(f"[!] Local Bouncer offline or failed: {e}")
+        rl.log(f"[!] Local Bouncer offline or failed: {e}")
     return None
 
 def process_final_score(item, rel, rat):
     """Handles the final routing for scoring."""
     title, link = item["title"], item["link"]
-    print(f"  -> [Final] Score: {rel}")
+    badge = SCORE_EMOJI.get(rel, "")
+    rl.log(f"  -> [Final] {badge} {rel}: {title[:50]}")
     if rel == "IGNORE":
-        print(f"  -> Skipping log for non-English source: {title[:40]}")
+        rl.log(f"  -> Skipping log for non-English source: {title[:40]}")
         return
 
     if rel in ["HIGH", "MEDIUM"]:
@@ -266,18 +338,18 @@ def process_final_score(item, rel, rat):
         log_rejection(title, link, rat)
 
 def process_batch(batch, rules_text):
-    """Processes a batch of snippets through Stage 2 (Ollama) and Stage 3 (Gemini)."""
+    """Processes a batch of snippets through Stage 2 (Ollama) and Stage 3 (DeepSeek)."""
     if not batch: return
-    print(f"[*] Processing batch of {len(batch)} snippets through Local Bouncer...")
+    rl.log(f"[*] Processing batch of {len(batch)} snippets through Local Bouncer...")
 
     ollama_results = evaluate_with_ollama(batch)
 
     if ollama_results is None:
-        print("[!] Bouncer parse failed. Falling back to individual DeepSeek evaluation...")
+        rl.log("[!] Bouncer parse failed. Falling back to individual DeepSeek evaluation...")
         for item in batch:
             rel_data = evaluate_snippet(item["title"], item["snippet"], rules_text)
             process_final_score(item, rel_data.get("relevance", "LOW"), rel_data.get("rationale", "No rationale."))
-            time.sleep(3) # Brief pause between individual calls
+            time.sleep(3)
         return
 
     try:
@@ -291,19 +363,19 @@ def process_batch(batch, rules_text):
 
                 item = batch[idx]
                 title, link, snippet = item["title"], item["link"], item["snippet"]
-
-                print(f"  -> [Bouncer Triage] {title[:40]}... Score: {rel}")
+                badge = SCORE_EMOJI.get(rel, "")
+                rl.log(f"  -> [Bouncer] {badge} {rel}: {title[:50]}")
 
                 if rel in ["LOW", "SILENT_ANOMALY"]:
                     log_triage_rejection(title, link, rel, rat)
                 else:
                     # STAGE 3: DEEPSEEK CONFIRMATION
-                    print(f"  -> [DeepSeek Confirming] {title[:40]}...")
+                    rl.log(f"  -> [DeepSeek Confirming] {title[:50]}...")
                     ds_data = evaluate_snippet(title, snippet, rules_text)
                     process_final_score(item, ds_data.get("relevance", "LOW"), ds_data.get("rationale", "No rationale."))
                     time.sleep(3)
     except Exception as e:
-        print(f"[!] Error parsing batch results: {e}")
+        rl.log(f"[!] Error parsing batch results: {e}")
 
 # --- GENAI CAPABILITIES ---
 def generate_queries(topics):
@@ -326,7 +398,7 @@ def generate_queries(topics):
 
         context_block = "\n".join(context_snippets) if context_snippets else "No prior triage data available."
 
-        print("[+] Initializing Local Brainstorming (DeepSeek-R1)...")
+        rl.log("[+] Initializing Local Brainstorming (DeepSeek-R1)...")
         prompt = f"""You are a research assistant for a cyber-physical resilience study.
 Based on recent triage findings, generate new search queries to expand coverage.
 
@@ -364,23 +436,23 @@ Output ONLY valid JSON with no extra text:
                 if sq and dq:
                     save_query_cache(sq, dq)
                     return sq, dq
-                print("[!] Local model returned empty query lists.")
+                rl.log("[!] Local model returned empty query lists.")
             except json.JSONDecodeError as e:
-                print(f"[!] JSON parse failed: {e}")
-                print(f"[!] Raw response snippet: {cleaned[:200]}")
+                rl.log(f"[!] JSON parse failed: {e}")
+                rl.log(f"[!] Raw response snippet: {cleaned[:200]}")
 
     except Exception as e:
-        print(f"[!] Local brainstorm failed: {e}")
+        rl.log(f"[!] Local brainstorm failed: {e}")
     finally:
         if qdrant is not None:
             qdrant.close()
 
-    print("[!] Falling back to hardcoded Master Queries.")
+    rl.log("[!] Falling back to hardcoded Master Queries.")
     return MASTER_SCHOLAR_QUERIES, MASTER_DDG_QUERIES
 
 def evaluate_snippet(title, snippet, rules_text):
     """Uses local DeepSeek-R1 via Ollama to screen a snippet with a strict boolean filter."""
-    print(f"  [*] Using Local DeepSeek-R1 for Evaluation...")
+    rl.log("  [*] Using Local DeepSeek-R1 for Evaluation...")
     prompt = f"""Does this text discuss life-safety, fail-safe mechanisms, or the intersection of engineering safety and cybersecurity in industrial/OT environments?
 Respond ONLY with \"YES\" or \"NO\", followed by a one-sentence technical reason.
 
@@ -404,14 +476,15 @@ Snippet: {snippet}"""
             else:
                 return {"relevance": "LOW", "rationale": rationale}
     except Exception as e:
-        print(f"[!] Local evaluation failed: {e}")
+        rl.log(f"[!] Local evaluation failed: {e}")
     return {"relevance": "LOW", "rationale": "Local model unavailable."}
 
 # --- SEARCH ENGINES ---
 
 def search_scholar(query, rules_text, limit=3):
     """Scrapes Google Scholar for academic papers."""
-    print(f"\n[*] Scholar Search: {query}")
+    rl.section("📚", f"Scholar Search")
+    rl.log(f"[*] Scholar Search: {query}")
     batch = []
     try:
         search = scholarly.search_pubs(query)
@@ -423,19 +496,21 @@ def search_scholar(query, rules_text, limit=3):
 
             if link == 'No link' or not is_new_discovery(link): continue
             if not python_sieve(title, abstract):
-                print(f"  -> System Sieve rejected: {title[:40]}...")
+                rl.log(f"  -> ⚪ Sieve rejected: {title[:50]}...")
+                rl.sieve()
                 continue
 
             batch.append({"title": title, "snippet": abstract, "link": link})
             time.sleep(5)
     except StopIteration:
         pass
-    except Exception as e: print(f"[!] Scholar Error: {e}")
+    except Exception as e: rl.log(f"[!] Scholar Error: {e}")
     process_batch(batch, rules_text)
 
 def search_ddg(query, rules_text, limit=4):
     """Scrapes DuckDuckGo for Grey Literature & government sources."""
-    print(f"\n[*] Web Search (DDG): {query}")
+    rl.section("🌐", f"Web Search (DDG)")
+    rl.log(f"[*] Web Search (DDG): {query}")
     batch = []
     try:
         with DDGS() as duck:
@@ -447,21 +522,23 @@ def search_ddg(query, rules_text, limit=4):
 
                 if link == 'No link' or not is_new_discovery(link): continue
                 if not python_sieve(title, snippet):
-                    print(f"  -> System Sieve rejected: {title[:40]}...")
+                    rl.log(f"  -> ⚪ Sieve rejected: {title[:50]}...")
+                    rl.sieve()
                     continue
 
                 batch.append({"title": title, "snippet": snippet, "link": link})
                 time.sleep(2)
     except Exception as e:
-        print(f"[!] DDG Error: {e}")
+        rl.log(f"[!] DDG Error: {e}")
     process_batch(batch, rules_text)
 
 def search_google(query, rules_text, limit=4):
     """Scrapes Google Search for Grey Literature as a DDG fallback."""
-    print(f"\n[*] Web Search (Google): {query}")
+    rl.section("🔎", f"Web Search (Google)")
+    rl.log(f"[*] Web Search (Google): {query}")
     batch = []
     if google_search is None:
-        print("[!] Google Search unavailable: run `pip install googlesearch-python` to enable.")
+        rl.log("[!] Google Search unavailable: run `pip install googlesearch-python` to enable.")
         return
     try:
         results = google_search(query, num_results=limit, advanced=False)
@@ -477,43 +554,54 @@ def search_google(query, rules_text, limit=4):
 
             if link == 'No link' or not is_new_discovery(link): continue
             if not python_sieve(title, snippet):
-                print(f"  -> System Sieve rejected: {title[:40]}...")
+                rl.log(f"  -> ⚪ Sieve rejected: {title[:50]}...")
+                rl.sieve()
                 continue
 
             batch.append({"title": title, "snippet": snippet, "link": link})
             time.sleep(2)
     except Exception as e:
-        print(f"[!] Google Search Error: {e}")
+        rl.log(f"[!] Google Search Error: {e}")
     process_batch(batch, rules_text)
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Scout Agent: Cyber-Physical Resilience Research Pipeline")
     parser.add_argument("--refresh", action="store_true",
-                        help="Bypass the local cache and force a new Gemini API brainstorm.")
+                        help="Bypass the local cache and force a new DeepSeek brainstorm.")
     args = parser.parse_args()
+
+    # Migrate legacy seen_sources.txt to seen_sources.md if it exists
+    legacy = LOGS_DIR / "seen_sources.txt"
+    if legacy.exists() and not MEMORY_FILE.exists():
+        legacy.rename(MEMORY_FILE)
+        rl.log("[*] Migrated seen_sources.txt -> seen_sources.md")
 
     rules = load_rules()
     topics_env = os.getenv("RESEARCH_TOPICS", "NIST 800-82 safety over security, FEMA Lifelines Cyber Dependency")
     topics_list = [t.strip() for t in topics_env.split(",") if t.strip()]
 
-    # --- QUERY RESOLUTION: Cache -> Cloud -> Hardcoded Fallback ---
+    # --- QUERY RESOLUTION: Cache -> DeepSeek -> Hardcoded Fallback ---
     if args.refresh:
-        print("[*] --refresh flag detected. Bypassing cache and requesting new queries.")
+        rl.log("[*] --refresh flag detected. Bypassing cache and requesting new queries.")
         scholar_queries, ddg_queries = generate_queries(topics_list)
     else:
         cached = load_query_cache()
         if cached:
             scholar_queries, ddg_queries = cached
+            rl.log(f"[*] Loaded {len(scholar_queries)} Scholar + {len(ddg_queries)} DDG queries from cache.")
         else:
-            print("[*] No query cache found. Requesting queries from Cloud Agent.")
+            rl.log("[*] No query cache found. Generating queries via local DeepSeek...")
             scholar_queries, ddg_queries = generate_queries(topics_list)
 
-    print("[=] Executing Pluggable Hybrid Search...")
+    rl.log("[=] Executing Pluggable Hybrid Search...")
+    rl.section("🔬", "Academic Pass (Google Scholar)")
 
     # Academic Pass
     for sq in scholar_queries:
         search_scholar(sq, rules)
+
+    rl.section("📰", "Grey Literature Pass (DDG + Google)")
 
     # Grey Literature Pass
     for dq in ddg_queries:
