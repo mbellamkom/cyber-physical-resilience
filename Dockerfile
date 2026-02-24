@@ -19,6 +19,7 @@ LABEL description="Self-contained content extraction hub (FastAPI + trafilatura)
 # ---- System dependencies ------------------------------------------------
 # lxml and trafilatura need these C libs for fast HTML parsing
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
     libxml2 \
     libxslt1.1 \
     && rm -rf /var/lib/apt/lists/*
