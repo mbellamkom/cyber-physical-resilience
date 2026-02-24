@@ -1,6 +1,6 @@
 # =======================================================================
 # setup-extractor.ps1
-# Extractor Manager Service — Windows Setup Script
+# Extractor Manager Service -- Windows Setup Script
 #
 # Requirements:
 #   - Docker Desktop must be running
@@ -17,28 +17,30 @@ $ComposeFile = Join-Path $ProjectRoot "docker-compose.extractor.yml"
 # -----------------------------------------------------------------------
 # 0.  Pre-flight Checks
 # -----------------------------------------------------------------------
-Write-Host "`n[1/6] Running pre-flight checks..." -ForegroundColor Cyan
+Write-Host ""
+Write-Host "[1/6] Running pre-flight checks..." -ForegroundColor Cyan
 
 # Verify Docker is reachable
 try {
-    docker info | Out-Null
-    Write-Host "  ✅ Docker Desktop is running." -ForegroundColor Green
+    docker info 2>&1 | Out-Null
+    Write-Host "  [OK] Docker Desktop is running." -ForegroundColor Green
 } catch {
-    Write-Host "  ❌ Docker Desktop is not running or not accessible. Please start Docker Desktop and try again." -ForegroundColor Red
+    Write-Host "  [FAIL] Docker Desktop is not running or not accessible. Please start Docker Desktop and try again." -ForegroundColor Red
     exit 1
 }
 
 # Verify D: drive exists
 if (-Not (Test-Path "D:\")) {
-    Write-Host "  ❌ D: drive not found. Please ensure the D: drive is available." -ForegroundColor Red
+    Write-Host "  [FAIL] D: drive not found. Please ensure the D: drive is available." -ForegroundColor Red
     exit 1
 }
-Write-Host "  ✅ D: drive is available." -ForegroundColor Green
+Write-Host "  [OK] D: drive is available." -ForegroundColor Green
 
 # -----------------------------------------------------------------------
 # 1.  Create D: Drive Directory Structure
 # -----------------------------------------------------------------------
-Write-Host "`n[2/6] Creating D: drive directory structure..." -ForegroundColor Cyan
+Write-Host ""
+Write-Host "[2/6] Creating D: drive directory structure..." -ForegroundColor Cyan
 
 $Dirs = @(
     "D:\Docker\extractor\logs",
@@ -48,16 +50,17 @@ $Dirs = @(
 foreach ($Dir in $Dirs) {
     if (-Not (Test-Path $Dir)) {
         New-Item -ItemType Directory -Path $Dir -Force | Out-Null
-        Write-Host "  ✅ Created: $Dir" -ForegroundColor Green
+        Write-Host "  [CREATED] $Dir" -ForegroundColor Green
     } else {
-        Write-Host "  ↩️  Already exists (skipping): $Dir" -ForegroundColor DarkGray
+        Write-Host "  [SKIP] Already exists: $Dir" -ForegroundColor DarkGray
     }
 }
 
 # -----------------------------------------------------------------------
 # 2.  Configure Docker Desktop to Use D: Drive (daemon.json)
 # -----------------------------------------------------------------------
-Write-Host "`n[3/6] Checking Docker Desktop data-root configuration..." -ForegroundColor Cyan
+Write-Host ""
+Write-Host "[3/6] Checking Docker Desktop data-root configuration..." -ForegroundColor Cyan
 
 $DaemonConfigPath = "$env:APPDATA\Docker\daemon.json"
 $DesiredDataRoot  = "D:\\Docker\\data"
@@ -69,23 +72,23 @@ if (Test-Path $DaemonConfigPath) {
 }
 
 if ($DaemonConfig.'data-root' -ne $DesiredDataRoot) {
-    Write-Host "  ⚙️  Setting Docker data-root to $DesiredDataRoot ..." -ForegroundColor Yellow
+    Write-Host "  [INFO] Setting Docker data-root to $DesiredDataRoot ..." -ForegroundColor Yellow
     $DaemonConfig | Add-Member -MemberType NoteProperty -Name "data-root" -Value $DesiredDataRoot -Force
     $DaemonConfig | ConvertTo-Json -Depth 5 | Set-Content $DaemonConfigPath -Encoding UTF8
-
-    Write-Host "  ✅ daemon.json updated. You will need to restart Docker Desktop for this change to take effect." -ForegroundColor Green
-    Write-Host "  ⚠️  NOTE: Restart Docker Desktop now, then re-run this script to continue." -ForegroundColor Yellow
+    Write-Host "  [OK] daemon.json updated." -ForegroundColor Green
+    Write-Host "  [NOTE] Restart Docker Desktop for this change to take effect, then re-run this script." -ForegroundColor Yellow
 } else {
-    Write-Host "  ✅ Docker data-root is already set to $DesiredDataRoot." -ForegroundColor Green
+    Write-Host "  [OK] Docker data-root is already set to $DesiredDataRoot." -ForegroundColor Green
 }
 
 # -----------------------------------------------------------------------
 # 3.  Append Extractor Variables to .env (Idempotent)
 # -----------------------------------------------------------------------
-Write-Host "`n[4/6] Updating .env with extractor configuration..." -ForegroundColor Cyan
+Write-Host ""
+Write-Host "[4/6] Updating .env with extractor configuration..." -ForegroundColor Cyan
 
 if (-Not (Test-Path $EnvFile)) {
-    Write-Host "  ❌ .env file not found at $EnvFile" -ForegroundColor Red
+    Write-Host "  [FAIL] .env file not found at $EnvFile" -ForegroundColor Red
     exit 1
 }
 
@@ -103,98 +106,100 @@ TRACE_EVERYTHING=true
 # Only append if NUM_EXTRACTOR_WORKERS not already present
 if ($EnvContent -notmatch "NUM_EXTRACTOR_WORKERS") {
     Add-Content -Path $EnvFile -Value $ExtractorBlock -Encoding UTF8
-    Write-Host "  ✅ Extractor variables appended to .env" -ForegroundColor Green
+    Write-Host "  [OK] Extractor variables appended to .env" -ForegroundColor Green
 } else {
-    Write-Host "  ↩️  Extractor variables already present in .env (skipping)" -ForegroundColor DarkGray
+    Write-Host "  [SKIP] Extractor variables already present in .env" -ForegroundColor DarkGray
 }
 
 # -----------------------------------------------------------------------
 # 4.  Create Docker Network (if not present)
 # -----------------------------------------------------------------------
-Write-Host "`n[5/6] Ensuring Docker network 'newsbot-network' exists..." -ForegroundColor Cyan
+Write-Host ""
+Write-Host "[5/6] Ensuring Docker network 'newsbot-network' exists..." -ForegroundColor Cyan
 
 $NetworkExists = docker network ls --filter "name=newsbot-network" --format "{{.Name}}"
 if ($NetworkExists -ne "newsbot-network") {
     docker network create newsbot-network | Out-Null
-    Write-Host "  ✅ Created Docker network: newsbot-network" -ForegroundColor Green
+    Write-Host "  [OK] Created Docker network: newsbot-network" -ForegroundColor Green
 } else {
-    Write-Host "  ↩️  Network 'newsbot-network' already exists (skipping)" -ForegroundColor DarkGray
+    Write-Host "  [SKIP] Network 'newsbot-network' already exists" -ForegroundColor DarkGray
 }
 
 # -----------------------------------------------------------------------
 # 5.  Start the Extractor Manager with Docker Compose
 # -----------------------------------------------------------------------
-Write-Host "`n[6/6] Starting Extractor Manager Service..." -ForegroundColor Cyan
+Write-Host ""
+Write-Host "[6/6] Starting Extractor Manager Service..." -ForegroundColor Cyan
 
 if (-Not (Test-Path $ComposeFile)) {
-    Write-Host "  ❌ docker-compose.extractor.yml not found at $ComposeFile" -ForegroundColor Red
+    Write-Host "  [FAIL] docker-compose.extractor.yml not found at $ComposeFile" -ForegroundColor Red
     exit 1
 }
 
 docker-compose -f $ComposeFile up -d
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "  ❌ docker-compose failed to start. Check the output above for errors." -ForegroundColor Red
+    Write-Host "  [FAIL] docker-compose failed to start. Check the output above for errors." -ForegroundColor Red
     exit 1
 }
 
-Write-Host "  ✅ Extractor Manager container started." -ForegroundColor Green
+Write-Host "  [OK] Extractor Manager container started." -ForegroundColor Green
 
 # -----------------------------------------------------------------------
 # 6.  Health Verification (retry up to 5x, 5s apart)
 # -----------------------------------------------------------------------
-Write-Host "`n🔍 Verifying health at http://localhost:8003/health ..." -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Verifying health at http://localhost:8003/health ..." -ForegroundColor Cyan
 
 $MaxAttempts = 5
 $Attempt     = 0
 $Healthy     = $false
 
-Start-Sleep -Seconds 5   # Initial pause for startup
+Start-Sleep -Seconds 5   # Initial pause for container startup
 
 while ($Attempt -lt $MaxAttempts -and -Not $Healthy) {
     $Attempt++
     try {
         $Response = Invoke-WebRequest -Uri "http://localhost:8003/health" -UseBasicParsing -TimeoutSec 5
         if ($Response.StatusCode -eq 200) {
-            Write-Host "  ✅ Health check passed (attempt $Attempt):" -ForegroundColor Green
-            Write-Host "     $($Response.Content)" -ForegroundColor White
+            Write-Host "  [OK] Health check passed (attempt $Attempt/$MaxAttempts):" -ForegroundColor Green
+            Write-Host "       $($Response.Content)" -ForegroundColor White
             $Healthy = $true
         }
     } catch {
-        Write-Host "  ⏳ Attempt $Attempt/$MaxAttempts — service not ready yet. Retrying in 5s..." -ForegroundColor Yellow
+        Write-Host "  [WAIT] Attempt $Attempt/$MaxAttempts -- service not ready yet. Retrying in 5s..." -ForegroundColor Yellow
         Start-Sleep -Seconds 5
     }
 }
 
 if (-Not $Healthy) {
-    Write-Host "`n  ❌ Service did not respond after $MaxAttempts attempts." -ForegroundColor Red
-    Write-Host "     Run: docker logs extractor-manager — to inspect startup errors." -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "  [FAIL] Service did not respond after $MaxAttempts attempts." -ForegroundColor Red
+    Write-Host "         Run: docker logs extractor-manager -- to inspect startup errors." -ForegroundColor Yellow
     exit 1
 }
 
 # -----------------------------------------------------------------------
 # Done
 # -----------------------------------------------------------------------
-Write-Host @"
-
-=======================================================================
-  ✅  Extractor Manager Service setup complete!
-
-  📌 Endpoints:
-     Health:  http://localhost:8003/health
-     Stats:   http://localhost:8003/stats
-     Extract: POST http://localhost:8003/extract
-
-  📂 D: Drive Paths:
-     Logs:    D:\Docker\extractor\logs
-     Stats:   D:\Docker\extractor\stats
-
-  🔧 Configuration (from .env):
-     NUM_EXTRACTOR_WORKERS = 2  (safe for 4GB VRAM — Ollama unaffected)
-     EXTRACTOR_GPU         = cpu
-
-  📜 Useful commands:
-     docker logs -f extractor-manager
-     docker-compose -f docker-compose.extractor.yml down
-=======================================================================
-"@ -ForegroundColor Cyan
+Write-Host ""
+Write-Host "=======================================================================" -ForegroundColor Cyan
+Write-Host "  Extractor Manager Service setup complete!" -ForegroundColor Cyan
+Write-Host "" -ForegroundColor Cyan
+Write-Host "  Endpoints:" -ForegroundColor Cyan
+Write-Host "     Health:  http://localhost:8003/health" -ForegroundColor White
+Write-Host "     Stats:   http://localhost:8003/stats" -ForegroundColor White
+Write-Host "     Extract: POST http://localhost:8003/extract" -ForegroundColor White
+Write-Host "" -ForegroundColor Cyan
+Write-Host "  D: Drive Paths:" -ForegroundColor Cyan
+Write-Host "     Logs:    D:\Docker\extractor\logs" -ForegroundColor White
+Write-Host "     Stats:   D:\Docker\extractor\stats" -ForegroundColor White
+Write-Host "" -ForegroundColor Cyan
+Write-Host "  Configuration (from .env):" -ForegroundColor Cyan
+Write-Host "     NUM_EXTRACTOR_WORKERS = 2  (4GB VRAM stays free for Ollama)" -ForegroundColor White
+Write-Host "     EXTRACTOR_GPU         = cpu" -ForegroundColor White
+Write-Host "" -ForegroundColor Cyan
+Write-Host "  Useful commands:" -ForegroundColor Cyan
+Write-Host "     docker logs -f extractor-manager" -ForegroundColor White
+Write-Host "     docker-compose -f docker-compose.extractor.yml down" -ForegroundColor White
+Write-Host "=======================================================================" -ForegroundColor Cyan
