@@ -18,10 +18,8 @@ version: "3.9"
 services:
   extractor-manager:
     build:
-      # Build context is the project root so the Dockerfile can reach
-      # both containers/ and common/ as sibling directories.
-      context: .
-      dockerfile: containers/extractor_manager_service/Dockerfile
+      context: . # Project root -- finds Dockerfile and hub.py here
+      dockerfile: Dockerfile
     image: extractor-manager:latest # Tags the built image for reuse
     container_name: extractor-manager
 
