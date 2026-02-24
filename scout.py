@@ -383,7 +383,7 @@ def recheck_low_sources(rules_text: str):
     low_entries = []
     with open(MEMORY_FILE, "r", encoding="utf-8") as f:
         for line in f:
-            if "| 🔴 LOW |" in line or "| 🔴 LOW" in line:
+            if "| \U0001f534 LOW |" in line or "| \U0001f534 LOW" in line:
                 # Parse: | [title](link) | date | badge relevance | rationale |
                 m = re.match(r'\| \[(.+?)\]\((.+?)\) \|', line)
                 if m:
