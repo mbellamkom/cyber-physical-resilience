@@ -141,3 +141,54 @@
 | 🔴 LOW / Rejected | 16 |
 | 🔵 Triage (Bouncer) rejections | 2 |
 | ⚪ Sieve rejections | 0 |
+
+---
+
+## 🚀 Run — 2026-02-25 09:40
+
+[*] --recheck mode: re-evaluating past LOW sources with current prompts...
+[Recheck] Scanning seen_sources.md for LOW-scored sources...
+[Recheck] Found 16 LOW sources to re-evaluate.
+[Recheck] Checking: Framework for developing volcanic fragility and vulnerabilit
+[Recheck] Confirmed LOW: Framework for developing volcanic fragility and vu
+[Recheck] Checking: Risk and Reliability Assessment of Smoke Control Systems in
+[Recheck] Confirmed LOW: Risk and Reliability Assessment of Smoke Control S
+[Recheck] Checking: The state of ICS/OT cybersecurity in 2022 and beyond
+[Recheck] Confirmed LOW: The state of ICS/OT cybersecurity in 2022 and beyo
+[Recheck] Checking: Development of safety-first engineering models for high-cons
+[Recheck] Confirmed LOW: Development of safety-first engineering models for
+[Recheck] Checking: Aligning EU Cybersecurity Regulations with ICS Security Stan
+[Recheck] Confirmed LOW: Aligning EU Cybersecurity Regulations with ICS Sec
+[Recheck] Checking: Cybersecurity capabilities for critical infrastructure resil
+[Recheck] Confirmed LOW: Cybersecurity capabilities for critical infrastruc
+[Recheck] Checking: Securing critical infrastructure: Cybersecurity for industri
+[Recheck] Confirmed LOW: Securing critical infrastructure: Cybersecurity fo
+[Recheck] Checking: Engineering a Cyber-Informed Energy Infrastructure
+[Recheck] Confirmed LOW: Engineering a Cyber-Informed Energy Infrastructure
+[Recheck] Checking: Cybersecurity in the Energy Sector: Managing OT and IT Risks
+[Recheck] Confirmed LOW: Cybersecurity in the Energy Sector: Managing OT an
+[Recheck] Checking: EPA Guidance on Improving Cybersecurity at Drinking Water an
+[Recheck] Confirmed LOW: EPA Guidance on Improving Cybersecurity at Drinkin
+[Recheck] Checking: SECURITY MEASURES FOR WATER & WASTEWATER UTILITY FACILITIES
+[Recheck] Confirmed LOW: SECURITY MEASURES FOR WATER & WASTEWATER UTILITY F
+[Recheck] Checking: Strategic Cybersecurity for Water Treatment Facilities - ISA
+[Recheck] Confirmed LOW: Strategic Cybersecurity for Water Treatment Facili
+[Recheck] Checking: DNV: Maritime Safety Trends 2014-2024 | Sea and Job
+[Recheck] Confirmed LOW: DNV: Maritime Safety Trends 2014-2024 | Sea and Jo
+[Recheck] Checking: UPGRADING MARITIME CYBERSECURITY IN A DANGEROUS WORLD |
+[Recheck] Confirmed LOW: UPGRADING MARITIME CYBERSECURITY IN A DANGEROUS WO
+[Recheck] Checking: Infrastructure | Center for International Maritime Security
+[Recheck] Confirmed LOW: Infrastructure | Center for International Maritime
+[Recheck] Checking: Cyber Solutions
+[Recheck] Confirmed LOW: Cyber Solutions
+[*] Recheck complete. Run 'python scout.py' for a normal search pass.
+
+#### 📊 Session Summary
+
+| Metric | Count |
+| :--- | :--- |
+| Total evaluated | 0 |
+| 🟢🟡 HIGH / MEDIUM | 0 |
+| 🔴 LOW / Rejected | 0 |
+| 🔵 Triage (Bouncer) rejections | 0 |
+| ⚪ Sieve rejections | 0 |
