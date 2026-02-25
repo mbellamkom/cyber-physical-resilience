@@ -2,7 +2,7 @@
 
 This is an evolving project and is constantly being developed as the research progresses.
 
-> **TL;DR:** This repository is an AI-powered pipeline designed to discover, read, and audit hundreds of technical documents (academic papers, government frameworks) to analyze how they handle physical life-safety emergencies in cyber-physical environments (e.g. power grid shutdowns, hospital ransomware).
+> **TL;DR:** This repository is an AI-powered pipeline designed to discover, read, and audit hundreds of documents (academic papers, government frameworks) to analyze how they handle physical life-safety emergencies in cyber-physical environments (e.g. power grid shutdowns, hospital ransomware).
 
 ## Table of Contents
 1. [Project Overview](#1-project-overview)
@@ -12,16 +12,23 @@ This is an evolving project and is constantly being developed as the research pr
 5. [Directory Structure](#5-directory-structure)
 6. [Getting Started](#6-getting-started)
 
+---
+
 ## 1. Project Overview
-This project investigates **Dynamic Risk Management** in critical infrastructure, specifically, models that shift organizations from rigid security postures to flexible, risk-informed, and resilient behaviors such as adaptability (the ability to recognize when one risk outweighs another), [graceful degradation](https://www.sciencedirect.com/topics/computer-science/graceful-degradation) (maintaining critical components while letting non-critical ones degrade) and [post-incident evolution](https://dl.acm.org/doi/10.1145/3643666.3648578) (adjusting the existing system to incorporate lessons learned from an incident).
+This project investigates **Dynamic Risk Management** in critical infrastructure, specifically, models that shift organizations from rigid security postures to flexible, risk-informed, and resilient behaviors such as adaptability (the ability to recognize when one risk outweighs another), [graceful degradation](https://www.sciencedirect.com/topics/computer-science/graceful-degradation) (maintaining critical components while letting non-critical ones degrade) and [post-incident evolution](https://dl.acm.org/doi/10.1145/3643666.3648578) (adjusting the existing system to incorporate lessons learned from an incident). For this project, we are considering critical infrastructure to encompass manned facilities (ex. hospitals, industrial plants, transport hubs) and remote facilities (ex. power substations, dams) where an [incident](https://training.fema.gov/emiweb/is/icsresource/assets/glossary%20of%20related%20terms.pdf) could produce downstream harm.
+
+### Terminology
+This project adopts the **all-hazards** approach to resilience. While the primary vectors analyzed are cyber-adversarial, we define an **Incident** according to the [FEMA National Incident Management System (NIMS)](https://training.fema.gov/emiweb/is/icsresource/assets/glossary%20of%20related%20terms.pdf) standard:
+
+> "An occurrence or event, natural or human-caused, that requires an **emergency** response to protect life or property."
+
+By using this definition, this project ensures that resilience metrics account for both the digital state of the system and the physical emergency response requirements.
 
 The core focus of this research is the **"Break-Glass" intersection**: the critical moment during an emergency where cybersecurity lockdowns must be intentionally degraded or bypassed to save lives or prevent a physical disaster.
 
 When these cyber-physical emergencies occur, practitioners are caught between two operational philosophies:
 * **Cybersecurity (Traditionally Fail-Secure):** Defaults to locking systems down to protect data and hardware.
 * **Emergency Management (Fail-Safe):** Defaults to keeping access open to preserve life and maintain critical operations.
-
-
 
 To evaluate how different global frameworks (like NIST, ISO, and FEMA) handle this conflict, this project utilizes a semi-automated literature review pipeline. The pipeline uses a three-tier **Dynamic Switch** logic to determine how systems *should* behave in an emergency:
 
@@ -34,6 +41,7 @@ To evaluate how different global frameworks (like NIST, ISO, and FEMA) handle th
 * **Vector Database:** Qdrant (`qdrant-client`) for local, disk-persistent document embeddings and memory.
 * **Search Tools:** `scholarly` for Google Scholar academic papers, and `ddgs` for general web/grey literature.
 * **Notifications:** Discord Webhooks for real-time human-in-the-loop review alerts.
+
 ---
 
 ## 2. The Automation Pipeline
@@ -41,8 +49,6 @@ Reading hundreds of technical frameworks, academic papers, incident reports, and
 
 > **🤖 AI Co-Contributor Notice:**
 > This repository is actively co-maintained by **[Google Antigravity](https://antigravity.google/)**, an AI agentic coding assistant. Antigravity assists with writing the pipeline scripts, generating documentation (like `SETUP.md` and this `README`), refining AI rule prompts, and authoring `git` commits to ensure a rigorous audit trail of changes.
-
-
 
 The workflow is broken into three steps:
 
@@ -124,9 +130,8 @@ To use it for a different project, you will need to replace the search terms in 
     │   └── PROJECT_RULES.md  # Core project constraints & priority logic
     └── skills/
         └── auditor.md        # Librarian persona & evaluation logic
-
-
 ```
+
 ## 6. Getting Started
 If you are cloning this repository to run your own pipeline, please refer to the **[SETUP.md](./SETUP.md)** file for detailed instructions on required dependencies, environment configuration (`.env`), and how to run the components.
 
