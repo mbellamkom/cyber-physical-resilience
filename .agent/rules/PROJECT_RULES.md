@@ -74,7 +74,8 @@ All logic changes, framework mappings, and source classification rules used by t
 * 🚩 **[REGULATORY_BARRIER]:** Legal/compliance barriers to "flexible" overrides.
 * 🔍 **[SPOOF_VULNERABILITY]:** Sensors vulnerable to cyber-spoofing to force a "fail-open" state.
 * 🔄 **[INCIDENT_FEEDBACK_LOOP]:** Requirements for the system to evolve its "DNA" based on "break-glass" events.
-* 🚩 **[STRUCTURAL_OMISSION]:** A framework, standard, or guidance document that governs cyber-physical or OT/ICS environments but contains **zero explicit acknowledgment** of human life-safety requirements, emergency egress, or physical consequence — despite the systems it governs being directly capable of causing bodily harm, environmental damage, or loss of life. Distinguished from 🟡 [OUT_OF_SCOPE_SILENCE] (where physical safety is genuinely outside the framework's purview) in that [STRUCTURAL_OMISSION] applies when safety *should* be in scope but is absent. These documents are retained as **negative baselines** to quantify the gap between current governance and life-safety-aware frameworks.
+* 🚩 **[STRUCTURAL_OMISSION]**: A framework, standard, or guidance document that governs cyber-physical or OT/ICS environments but contains **zero explicit acknowledgment** of human life-safety requirements, emergency egress, or physical consequence — despite the systems it governs being directly capable of causing bodily harm, environmental damage, or loss of life. Distinguished from 🟡 [OUT_OF_SCOPE_SILENCE] (where physical safety is genuinely outside the framework's purview) in that [STRUCTURAL_OMISSION] applies when safety *should* be in scope but is absent. These documents are retained as **negative baselines** to quantify the gap between current governance and life-safety-aware frameworks.
+* 🚩 **[CLAIR_SILO]**: Applied when a framework remains trapped in traditional industrial levels (Levels 0–4) and fails to acknowledge Primary Infrastructure (Level -1) or Distributed Sovereignty (Level 6/7) as critical failure vectors.
 
 ### 📖 Logic Dictionary (Technical Translation Layer)
 
@@ -88,11 +89,14 @@ All logic changes, framework mappings, and source classification rules used by t
 | **Sensor Spoofing** | False Data Injection (FDI), Signal Replay, Sensor Manipulation, Man-in-the-Middle (MitM), Measurement Fault. |
 | **Un-breaking the Glass** | Post-Incident Evolution, Continuous Improvement, Iterative Risk Profile, Anti-fragility. |
 | **Downstream Risk** | Cascading Failure, 2nd/3rd Order Effects, Interdependency Risk, Environmental Impact, Community-Level Hazard. |
+| **Logical Dependency** | Operational state changes driven by external mandates, policy, or regulations (e.g., utility load-shedding or mandatory safety protocols). |
+| **Geographic Dependency** | Shared physical location risks, such as power and fiber sharing a common utility trench. |
 
 ## 📊 Scout Agent Scoring Criteria
 When the AI Discovery Agent evaluates search abstracts and grey literature, it uses the following strict gradient to determine relevance:
 * **HIGH:** Assign a HIGH score in **either** of the following conditions:
     1. **(Positive Baseline):** The document explicitly discusses the tension between safety and security, system overrides, or dynamic risk management in an OT-nexus as its **primary thesis** or **core focus**.
     2. **(Negative Baseline — 🚩 STRUCTURAL_OMISSION):** The document is a major framework, standard, or regulatory instrument that governs OT/ICS or cyber-physical systems **and** is completely silent on human life-safety, emergency egress, or physical consequence. Flag these with 🚩 [STRUCTURAL_OMISSION] and retain as evidence of governance gaps. *Example: A comprehensive ICS cybersecurity standard that specifies access control, patch management, and network segmentation for industrial plants, but never once addresses worker safety, fail-safe states, or emergency shutdown.*
+    3. Any document that maps the temporal dynamics (transient responses) or spatial distribution of cascading failures across the 10-level CLAIR hierarchy.
 * **MEDIUM:** The document discusses relevant cyber-physical concepts (e.g., ICS resilience, structural engineering, or emergency workflows) as its primary focus, but only mentions the direct safety vs. security override conflict tangentially or as a secondary point.
 * **LOW:** The document does not discuss physical safety, emergency operations, or OT/ICS environments. This includes standard IT cybersecurity frameworks (e.g., focused solely on data privacy, encryption, network firewalls, or financial fraud) or fields with zero life-safety/physical consequences.

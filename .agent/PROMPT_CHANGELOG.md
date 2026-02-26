@@ -4,6 +4,24 @@ This document tracks changes made to the AI agent prompts, rules, and logic file
 
 **Academic Rigor Constraint:** All logic changes, prompt updates, and rule modifications recorded in this document are derived directly from the human researcher. The initial logic and source classification rules were developed during a preliminary research planning session between the researcher and the web-based version of Google Gemini. The Google Antigravity AI agent implemented those derived rules into this repository to ensure methodological transparency.
 
+## [2026-02-26] — CLAIR Model Integration: 10-Level Hierarchy & Dependency Typology
+**Files Modified:** `.agent/rules/PROJECT_RULES.md`
+**Change Type:** Logic Refinement — Architectural Expansion
+**Authorization:** Researcher-approved via explicit `APPROVED` keyword per Directive 1 (Zero-Implicit Trust).
+
+**Reasoning:**
+Traditional industrial security models often focus on the Purdue Enterprise Reference Architecture (Levels 0–4), which fails to account for modern critical infrastructure interdependencies and distributed sovereignty (cloud/SIS). The integration of the *Comprehensive Linkage and Architectural Infrastructure Resiliency (CLAIR) Model* (Perry, 2026) expands the project's analytical lens to include Primary Infrastructure (Level -1) and External Distributed Services (Levels 6/7). This update also formalizes Logical and Geographic dependencies as distinct failure vectors for cascading risk analysis.
+**Source Documentation:** Perry, C. (2026). *The CLAIR Model: A Synthesized Conceptual Framework for Mapping Critical Infrastructure Interdependencies*. https://isc.sans.edu/diaryimages/images/The_CLAIR_Model.pdf
+
+**Modifications:**
+* **New Audit Flag:** 🚩 `[CLAIR_SILO]` added to identify frameworks that fail to acknowledge failure vectors outside traditional SCADA/ICS boundaries (Levels -1, 6, 7).
+* **Logic Dictionary Expansion:** Added `Logical Dependency` (external mandates/policy) and `Geographic Dependency` (shared physical location risks) to the Technical Translation Layer.
+* **Scout Agent Scoring Refinement:** Added a third HIGH scoring condition: Documents that map temporal dynamics or spatial distribution of cascading failures across the CLAIR hierarchy are prioritized for research retention.
+
+**Researcher Note:** Claire reached out to me for feedback on this framework and it filled in some gaps of the agent logic as described in the reasoning section. When I initially asked the agent to update the rules and changelog, I didn't actually give it the reasoning for making this change, but it came up with the exact reasoning on its own.
+
+---
+
 ## [2026-02-25] — Changelog Reordering & Readme Update
 **File Modified:** `../.agent/PROMPT_CHANGELOG.md`, `../README.md`
 **Change Type:** Entry reordering & documentation update
@@ -299,6 +317,3 @@ Added "Step 0: Source Classification & Rigor Audit" to `auditor.md` to weigh fra
 To explicitly prevent the AI from adopting an "overly helpful" directive that could lead to logic hallucinations (e.g., inventing unapproved conflict categories to classify edge-case documents). The research pipeline must remain mathematically consistent and strictly adhere to the predefined, human-approved taxonomy.
 **Modification:**
 Injected an explicit `🛑 Academic Constraint` clause into the Master Rules. This clause forbids the AI from independently generating new framework mappings or source classification rules. Crucially, it hardcodes an operational boundary: the AI is mandated to obtain manual human review and explicit approval before attempting any modifications, additions, or iterations to the files contained within the `.agent/` directory.
-
-
-
