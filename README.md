@@ -24,6 +24,8 @@ This project adopts the **all-hazards** approach to resilience. While the primar
 
 By using this definition, this project ensures that resilience metrics account for both the digital state of the system and the physical emergency response requirements.
 
+This project also uses the National Research Council's definition of resilience:[the ability to prepare and plan for, absorb, recover from, and more successfully adapt to adverse events](https://doi.org/10.17226/6538).
+
 The core focus of this research is the **"Break-Glass" intersection**: the critical moment during an emergency where cybersecurity lockdowns must be intentionally degraded or bypassed to save lives or prevent a physical disaster.
 
 When these cyber-physical emergencies occur, practitioners are caught between two operational philosophies:
