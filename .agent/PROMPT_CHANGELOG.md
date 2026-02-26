@@ -301,3 +301,4 @@ To explicitly prevent the AI from adopting an "overly helpful" directive that co
 Injected an explicit `🛑 Academic Constraint` clause into the Master Rules. This clause forbids the AI from independently generating new framework mappings or source classification rules. Crucially, it hardcodes an operational boundary: the AI is mandated to obtain manual human review and explicit approval before attempting any modifications, additions, or iterations to the files contained within the `.agent/` directory.
 
 
+
