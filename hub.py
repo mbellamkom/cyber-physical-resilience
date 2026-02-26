@@ -15,6 +15,9 @@ from datetime import datetime
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 
+import socket
+import ipaddress
+from urllib.parse import urlparse
 import trafilatura
 import uvicorn
 from fastapi import FastAPI, HTTPException
@@ -133,6 +136,39 @@ async def stats():
     }
 
 
+def is_safe_url(url: str) -> bool:
+    """
+    Validates that a URL uses HTTP/HTTPS and resolves to a public IP address.
+    Blocks localhost, private network ranges, and reserved/multicast IPs.
+    """
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            return False
+
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+
+        # Resolve hostname to IP
+        ip_addr = socket.gethostbyname(hostname)
+        ip_obj = ipaddress.ip_address(ip_addr)
+
+        # Block internal/private ranges
+        if (
+            ip_obj.is_private
+            or ip_obj.is_loopback
+            or ip_obj.is_reserved
+            or ip_obj.is_link_local
+            or ip_obj.is_multicast
+        ):
+            return False
+
+        return True
+    except Exception:
+        return False
+
+
 @app.post("/extract", response_model=ExtractResponse)
 async def extract(request: ExtractRequest):
     """
@@ -140,6 +176,11 @@ async def extract(request: ExtractRequest):
     Returns Markdown via trafilatura.
     """
     uri = request.uri.strip()
+
+    if not is_safe_url(uri):
+        logger.warning("Blocked unsafe/internal URI: %s", uri)
+        raise HTTPException(status_code=400, detail="Invalid or restricted URI.")
+
     logger.info("Extracting: %s", uri)
 
     try:

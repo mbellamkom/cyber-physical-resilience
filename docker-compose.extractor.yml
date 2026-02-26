@@ -43,11 +43,6 @@ services:
 
     # --- Volume mounts ---
     volumes:
-      # Docker socket -- works with Linux containers on Docker Desktop for Windows
-      - type: bind
-        source: /var/run/docker.sock
-        target: /var/run/docker.sock
-
       # D: drive → container log directory (persisted on D:)
       - type: bind
         source: D:\Docker\extractor\logs
