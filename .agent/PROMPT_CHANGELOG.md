@@ -4,6 +4,26 @@ This document tracks changes made to the AI agent prompts, rules, and logic file
 
 **Academic Rigor Constraint:** All logic changes, prompt updates, and rule modifications recorded in this document are derived directly from the human researcher. The initial logic and source classification rules were developed during a preliminary research planning session between the researcher and the web-based version of Google Gemini. The Google Antigravity AI agent implemented those derived rules into this repository to ensure methodological transparency.
 
+## [2026-02-27] — Security Architecture Enhancement: Data Airlock & Historical Logging
+**Files Added:** `scrubber.py`, `setup_logger.py`, `notes/security decisions and scrubber script.md`
+**Change Type:** Defensive Architecture Implementation
+**Authorization:** Researcher-approved via explicit `APPROVED` keyword per Directive 1 (Zero-Implicit Trust).
+
+**Reasoning:**
+To protect the local research pipeline from emerging LLM-specific threats, we implemented a defense-in-depth security architecture. The primary goal is to decouple untrusted data ingestion from the core agent logic to mitigate **indirect prompt injection** and **vector database poisoning**. This ensures that even if a source document contains malicious instructions, they are neutralized before reaching the LLM, and any resulting behavior is recorded in an immutable audit trail.
+
+> **Researcher's Note:** We may have actually done this yesterday, but after rethinking it, I decided that it was a significant enough change to be included in the prompt changelog.
+
+**Infrastructure Added:**
+* **The Automated Data Airlock (`scrubber.py`):** An event-driven watchdog service that monitors the download environment. It extracts raw text from PDFs and HTML, strips complex formatting, and scans for known jailbreak heuristics (e.g., "ignore all previous instructions"). Cleaned UTF-8 plaintext is then moved to the active research directory, while suspicious files are quarantined.
+* **Historical Integrity Logging (`setup_logger.py`):** Provisioned a relational SQLite database (`agent_logs.db`) stored on a separate volume. This database captures a high-fidelity audit trail of every LLM interaction, including the original source, system prompt, raw model response, and final parsed JSON. This provides a "ground truth" to reconstruct research state if the vector database is ever compromised by hallucinations or poisoned data.
+
+**Modifications:**
+* Structured the security strategy in `notes/security decisions and scrubber script.md` to map our local architecture against the OWASP Top 10 for LLM Applications.
+* Standardized resource capping in `scrubber.py` using patched `pypdf` versions to prevent DoS via malicious file structure.
+
+---
+
 ## [2026-02-26] — CLAIR Model Integration: 10-Level Hierarchy & Dependency Typology
 **Files Modified:** `.agent/rules/PROJECT_RULES.md`
 **Change Type:** Logic Refinement — Architectural Expansion
