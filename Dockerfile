@@ -16,6 +16,9 @@ FROM python:3.11-slim
 LABEL maintainer="Cyber-Physical Resilience Project"
 LABEL description="Self-contained content extraction hub (FastAPI + trafilatura)"
 
+# Security: Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
 # ---- System dependencies ------------------------------------------------
 # lxml and trafilatura need these C libs for fast HTML parsing
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -35,7 +38,10 @@ RUN pip install --no-cache-dir -r requirements-hub.txt
 COPY hub.py ./
 
 # ---- Runtime directories (overridden by volume mounts at run time) ------
-RUN mkdir -p /data/logs /data/stats
+RUN mkdir -p /data/logs /data/stats && chown -R appuser:appuser /app /data
+
+# ---- Switch to non-root user --------------------------------------------
+USER appuser
 
 # ---- Expose port --------------------------------------------------------
 EXPOSE 8003

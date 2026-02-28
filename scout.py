@@ -9,6 +9,8 @@ import datetime
 import requests
 from pathlib import Path
 from dotenv import load_dotenv
+import subprocess
+import shutil
 from scholarly import scholarly
 from ddgs import DDGS
 from discord_webhook import DiscordWebhook
@@ -21,6 +23,53 @@ except ImportError:
 # Load environment variables
 load_dotenv()
 
+def ensure_docker_running():
+    """Checks if Docker engine is responsive and attempts to start it if not."""
+    print("[*] Checking Docker Engine status...")
+    try:
+        # Check if docker is responsive
+        subprocess.run(["docker", "info"], check=True, capture_output=True)
+        print("  -> Docker Engine is [HEALTHY]")
+        return
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("  [!] Docker Engine unresponsive. Attempting to start Docker Desktop...")
+        docker_path = r"C:\Program Files\Docker\Docker\Docker Desktop.exe"
+        if not os.path.exists(docker_path):
+            print(f"  [!] Docker Desktop not found at {docker_path}")
+            sys.exit(1)
+
+        subprocess.Popen([docker_path])
+
+        # Polling loop: 120s total, 10s intervals
+        for attempt in range(12):
+            print(f"  [*] Waiting for Docker Engine (Attempt {attempt+1}/12)...")
+            time.sleep(10)
+            try:
+                subprocess.run(["docker", "info"], check=True, capture_output=True)
+                print("  -> Docker Engine is now [HEALTHY]")
+                return
+            except subprocess.CalledProcessError:
+                continue
+
+        print("  [!] Docker failing to reach healthy state after 120s. Aborting.")
+        sys.exit(1)
+
+def log_system_thermals():
+    """Captures CPU temperature via wmic. Returns temp in Celsius or None."""
+    try:
+        # Command: wmic /namespace:\\root\wmi PATH MSAcpi_ThermalZoneTemperature get CurrentTemperature
+        # Output is in tenths of Kelvin. (Total / 10) - 273.15 = Celsius
+        cmd = ["wmic", "/namespace:\\\\root\\wmi", "PATH", "MSAcpi_ThermalZoneTemperature", "get", "CurrentTemperature"]
+        res = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        lines = [line.strip() for line in res.stdout.splitlines() if line.strip()]
+        if len(lines) > 1:
+            raw_val = int(lines[1])
+            temp_c = (raw_val / 10.0) - 273.15
+            return round(temp_c, 1)
+    except Exception:
+        pass
+    return None
+
 # Setup paths and environment variables
 RESEARCH_PATH = Path(os.getenv("RESEARCH_PATH") or ".")
 LOGS_DIR = RESEARCH_PATH / "logs"
@@ -30,7 +79,11 @@ REJECTED_LOG = LOGS_DIR / "rejected_sources.md"
 TRIAGE_LOG = LOGS_DIR / "triage_log.md"
 RUN_LOG = LOGS_DIR / "run_log.md"
 
+# --- D-DRIVE MARKDOWN MIRROR ---
+DB_MIRROR_DIR = Path(os.getenv("DB_MIRROR_PATH", "D:/Cyber_Physical_DBs"))
+
 QUERY_CACHE = LOGS_DIR / "query_cache.json"
+SIEVE_DROPPED_LOG = DB_MIRROR_DIR / "logs" / "sieve_dropped.log"
 
 # --- QDRANT / LOCAL RAG CONFIG ---
 QDRANT_PATH = os.getenv("QDRANT_LOCAL_PATH", str(RESEARCH_PATH / ".qdrant_db"))
@@ -40,8 +93,6 @@ OLLAMA_URL = "http://localhost:11434"
 EMBED_MODEL = "nomic-embed-text"  # 768-dim, matches global_resilience_vault
 VECTOR_SIZE = 768
 
-# --- D-DRIVE MARKDOWN MIRROR ---
-DB_MIRROR_DIR = Path(os.getenv("DB_MIRROR_PATH", "D:/Cyber_Physical_DBs"))
 
 # --- EXTRACTOR HUB CONFIG ---
 EXTRACTOR_HUB_URL     = "http://localhost:8003"
@@ -96,15 +147,17 @@ class RunLogger:
 
     def __init__(self):
         self._ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-        self._counts = {"evaluated": 0, "high_medium": 0, "low": 0, "triage": 0, "sieve": 0}
+        self._counts = {"evaluated": 0, "high_medium": 0, "low": 0, "triage": 0, "sieve": 0, "dropped": 0}
+        self._thermal_consecutive_high = 0
         # Load lifetime verdicts from D: drive (creates defaults if file missing)
-        self._lifetime = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
+        self._lifetime = {"HIGH": 0, "MEDIUM": 0, "LOW": 0, "DROPPED": 0}
         if VERDICTS_FILE.exists():
             try:
                 loaded = json.loads(VERDICTS_FILE.read_text(encoding="utf-8"))
-                self._lifetime["HIGH"]   = int(loaded.get("HIGH",   0))
-                self._lifetime["MEDIUM"] = int(loaded.get("MEDIUM", 0))
-                self._lifetime["LOW"]    = int(loaded.get("LOW",    0))
+                self._lifetime["HIGH"]    = int(loaded.get("HIGH",    0))
+                self._lifetime["MEDIUM"]  = int(loaded.get("MEDIUM",  0))
+                self._lifetime["LOW"]     = int(loaded.get("LOW",     0))
+                self._lifetime["DROPPED"] = int(loaded.get("DROPPED", 0))
             except Exception:
                 pass
         self._f = open(RUN_LOG, "a", encoding="utf-8")
@@ -114,14 +167,50 @@ class RunLogger:
 
     def log(self, msg: str):
         """Print to terminal AND append to run_log.md."""
-        print(msg)
+        try:
+            print(msg)
+        except UnicodeEncodeError:
+            # Fallback for consoles that don't support emojis/UTF-8
+            print(msg.encode('ascii', 'replace').decode('ascii'))
         self._f.write(msg + "\n")
         self._f.flush()
 
     def section(self, icon: str, title: str):
-        """Write a markdown H3 section header."""
+        """Write a markdown H3 section header and check thermals."""
         self._f.write(f"\n### {icon} {title}\n\n")
         self._f.flush()
+        self.check_thermals()
+
+    def check_thermals(self):
+        """Captures temp and triggers emergency shutdown if 92C for 3 checks."""
+        temp = log_system_thermals()
+        if temp is None:
+            self._f.write("> [!] Thermal sensors unavailable via WMI.\n")
+            return
+
+        ts = datetime.datetime.now().strftime("%H:%M:%S")
+        self._f.write(f"> 🌡️ **Thermal Check ({ts}):** {temp}°C\n")
+        self._f.flush()
+
+        if temp >= 92:
+            self._thermal_consecutive_high += 1
+            self.log(f"  [!] CRITICAL HEAT: {temp}°C (Consecutive: {self._thermal_consecutive_high}/3)")
+            if self._thermal_consecutive_high >= 3:
+                self.log("\n" + "!" * 60)
+                self.log("🚩 [PROMPT_EVOLUTION_TRIGGER]: THERMAL EMERGENCY AT 92C")
+                self.log("INITIATING DATA FLUSH AND IMMEDIATE SHUTDOWN.")
+                self.log("!" * 60)
+
+                # Emergency flush to D:
+                self._save_verdicts()
+                self._f.write("\n### 🛑 THERMAL EMERGENCY SHUTDOWN TRIAGED\n")
+                self._f.close()
+
+                # Shutdown in 10s
+                os.system("shutdown /s /t 10")
+                sys.exit(1)
+        else:
+            self._thermal_consecutive_high = 0
 
     def score(self, relevance: str):
         """Track a scored result (session + lifetime)."""
@@ -140,6 +229,11 @@ class RunLogger:
     def sieve(self):
         self._counts["sieve"] += 1
 
+    def dropped(self):
+        """Track lexicographically rejected sources."""
+        self._counts["dropped"] += 1
+        self._lifetime["DROPPED"] += 1
+
     def _save_verdicts(self):
         """Persists lifetime HIGH/MEDIUM/LOW counts to D: drive."""
         try:
@@ -148,13 +242,16 @@ class RunLogger:
                 "HIGH":         self._lifetime["HIGH"],
                 "MEDIUM":       self._lifetime["MEDIUM"],
                 "LOW":          self._lifetime["LOW"],
-                "last_updated": self._ts,
+                "DROPPED":      self._lifetime["DROPPED"],
+                "last_run_ts":  self._ts
             }
             VERDICTS_FILE.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         except Exception as e:
             print(f"[!] Could not save verdicts: {e}")
 
     def _close(self):
+        if self._f.closed:
+            return
         self._save_verdicts()
         c  = self._counts
         lt = self._lifetime
@@ -171,12 +268,13 @@ class RunLogger:
         # CMD-friendly lifetime summary
         print("")
         print("=" * 60)
-        print("LIFETIME RESEARCH STATS (D:\\Docker\\extractor\\stats\\)")
+        print(f"LIFETIME RESEARCH STATS ({VERDICTS_FILE.parent})")
         print("-" * 60)
         print(f"  HIGH   : {lt['HIGH']}")
         print(f"  MEDIUM : {lt['MEDIUM']}")
         print(f"  LOW    : {lt['LOW']}")
-        print(f"  TOTAL  : {total}")
+        print(f"  DROPPED: {lt['DROPPED']} (Lexical Sieve)")
+        print(f"  TOTAL  : {lt['HIGH'] + lt['MEDIUM'] + lt['LOW']}")
         print(f"  Last updated: {self._ts}")
         print("=" * 60)
 
@@ -573,10 +671,24 @@ SIEVE_KEYWORDS = [
     "industrial", "infrastructure"
 ]
 
-def python_sieve(title, snippet):
-    """Fast lexical zero-cost filter."""
+def python_sieve(title, snippet, link="Unknown"):
+    """Fast lexical zero-cost filter. Logs drops for transparency."""
+    rl.sieve() # Increment scan counter
     text = (title + " " + snippet).lower()
-    return any(kw in text for kw in SIEVE_KEYWORDS)
+    passed = any(kw in text for kw in SIEVE_KEYWORDS)
+    if not passed:
+        rl.dropped() # Increment dropped counter
+        try:
+            SIEVE_DROPPED_LOG.parent.mkdir(parents=True, exist_ok=True)
+            with open(SIEVE_DROPPED_LOG, "a", encoding="utf-8") as f:
+                ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                f.write(f"--- {ts} ---\n")
+                f.write(f"TITLE: {title}\n")
+                f.write(f"URL:   {link}\n")
+                f.write(f"SNIPPET: {snippet}\n\n")
+        except Exception as e:
+            rl.log(f"  [!] Sieve log failure: {e}")
+    return passed
 
 # --- STAGE 2: LOCAL BOUNCER (OLLAMA) ---
 def evaluate_with_ollama(snippets_bulk):
@@ -590,24 +702,34 @@ def evaluate_with_ollama(snippets_bulk):
     content_json = json.dumps(content_list, indent=2)
     prompt = f"""
 You are a research triage assistant for a study on Dynamic Risk Management in cyber-physical systems.
+This research operates on the core assumption that future critical infrastructure will be comprised of hyper-interdependent cyber-physical systems.
 Evaluate each search snippet using the following STRICT scoring rules:
 
 SCORING RULES:
 - HIGH (Positive Baseline): The document explicitly discusses the tension between safety and security,
   system overrides, emergency access, fail-safe/fail-open behaviors, or dynamic risk management in
   an OT/ICS or cyber-physical context as its PRIMARY focus.
+- HIGH (Positive Baseline - Foundational): The document details advanced safety models,
+  domain-agnostic risk frameworks, or All-Hazards/Consequence-Driven frameworks (e.g., ISO, IEC, NIST, NIMS/FEMA)
+  as a primary focus.
 - HIGH (Abstract/Paywall): The content appears to be an abstract or summary (e.g. from a paywalled
   academic paper). Score HIGH if it strongly implies the full document covers life-safety, OT/ICS
   risk, emergency overrides, or the safety-security intersection. Do NOT penalize abstracts for
   lacking specific architectural details — reward strong thematic signal.
 - HIGH (Negative Baseline - STRUCTURAL_OMISSION): The document is a major framework, standard, or
   regulatory instrument governing OT/ICS or cyber-physical systems that is COMPLETELY SILENT on
-  human life-safety, emergency egress, or physical consequences. These are valuable as evidence of
-  governance gaps. Flag rationale with [STRUCTURAL_OMISSION].
+  human life-safety, emergency egress, or physical consequences ([Safety-Blind Spot]), OR it is a
+  safety/all-hazards framework that is COMPLETELY SILENT on cyber risk ([Cyber-Blind Spot]).
+  Flag rationale with 🚩 [STRUCTURAL_OMISSION].
 - MEDIUM: The document discusses ICS resilience, emergency workflows, or cyber-physical operations
   but only mentions safety vs. security overrides tangentially or as a secondary point.
-- LOW: The document addresses only IT-standard data security (data privacy, encryption, firewalls,
-  financial fraud) with zero physical safety or OT/ICS relevance.
+  NOTE: If a document meets the criteria but introduces a highly novel psychological, communication,
+  or risk model not easily categorized (e.g. cognitive ergonomics, operator linguistics), score it
+  MEDIUM and append the 💡 [EMERGING_THEME] flag to the rationale.
+- LOW: The document does not discuss complex physical safety, emergency operations, or OT/ICS
+  environments. Explicitly reject standard IT cybersecurity frameworks (privacy, encryption, firewalls)
+  AND routine workplace hazard compliance (OSHA ergonomics, scaffolding safety) with no tie to
+  systemic resilience.
 
 SNIPPETS:
 {content_json}
@@ -794,8 +916,22 @@ Output ONLY valid JSON with no extra text:
 def evaluate_snippet(title, snippet, rules_text):
     """Uses local DeepSeek-R1 via Ollama to screen a snippet with a strict boolean filter."""
     rl.log("  [*] Using Local DeepSeek-R1 for Evaluation...")
-    prompt = f"""Does this text explicitly discuss, OR strongly indicate (if it is an abstract or paywall summary), that the full document covers life-safety, fail-safe mechanisms, or the intersection of engineering safety and cybersecurity in industrial/OT environments?
+    prompt = f"""This research operates on the core assumption that future critical infrastructure
+will be comprised of hyper-interdependent cyber-physical systems.
+
+Does this text explicitly discuss the intersection of technical security and physical safety
+(e.g., cyber-physical systems, OT environments), OR does it detail advanced safety models,
+domain-agnostic risk frameworks (e.g., all-hazards, ISO, IEC, NIST, NIMS/FEMA), or
+systemic resilience models for high-consequence infrastructure?
+
+(Note: Explicitly exclude documents focused solely on routine workplace hazard compliance,
+occupational therapy, or basic civil building codes, unless directly tied to dynamic emergency response).
+
+If the text is a major framework missing cyber or safety, flag with 🚩 [STRUCTURAL_OMISSION].
+If it introduces novel psychological or communication models, flag with 💡 [EMERGING_THEME].
+
 If the text is clearly an abstract, judge based on thematic signal and intent, not the presence of specific architectural keywords.
+
 Respond ONLY with "YES" or "NO", followed by a one-sentence technical reason.
 
 Title: {title}
@@ -837,7 +973,7 @@ def search_scholar(query, rules_text, limit=3):
             link = paper.get('pub_url', 'No link')
 
             if link == 'No link' or not is_new_discovery(link): continue
-            if not python_sieve(title, abstract):
+            if not python_sieve(title, abstract, link):
                 rl.log(f"  -> ⚪ Sieve rejected: {title[:50]}...")
                 rl.sieve()
                 continue
@@ -863,7 +999,7 @@ def search_ddg(query, rules_text, limit=4):
                 link = res.get('href', 'No link')
 
                 if link == 'No link' or not is_new_discovery(link): continue
-                if not python_sieve(title, snippet):
+                if not python_sieve(title, snippet, link):
                     rl.log(f"  -> ⚪ Sieve rejected: {title[:50]}...")
                     rl.sieve()
                     continue
@@ -895,7 +1031,7 @@ def search_google(query, rules_text, limit=4):
                 link = str(getattr(res, 'url', 'No link'))
 
             if link == 'No link' or not is_new_discovery(link): continue
-            if not python_sieve(title, snippet):
+            if not python_sieve(title, snippet, link):
                 rl.log(f"  -> ⚪ Sieve rejected: {title[:50]}...")
                 rl.sieve()
                 continue
@@ -907,12 +1043,16 @@ def search_google(query, rules_text, limit=4):
     process_batch(batch, rules_text)
 
 if __name__ == "__main__":
+    ensure_docker_running()
+
     import argparse
     parser = argparse.ArgumentParser(description="Scout Agent: Cyber-Physical Resilience Research Pipeline")
     parser.add_argument("--refresh", action="store_true",
                         help="Bypass the local cache and force a new DeepSeek brainstorm.")
     parser.add_argument("--recheck", action="store_true",
                         help="Re-evaluate all past LOW sources with new prompts. Appends corrections; never overwrites history.")
+    parser.add_argument("--overnight", action="store_true",
+                        help="Preserve hardware: shut down Windows after task completion.")
     args = parser.parse_args()
 
     # Migrate legacy seen_sources.txt to seen_sources.md if it exists
@@ -931,34 +1071,48 @@ if __name__ == "__main__":
         rl.log("[*] --recheck mode: re-evaluating past LOW sources with current prompts...")
         recheck_low_sources(rules)
         rl.log("[*] Recheck complete. Run 'python scout.py' for a normal search pass.")
-        sys.exit(0)
-
-    topics_env = os.getenv("RESEARCH_TOPICS", "NIST 800-82 safety over security, FEMA Lifelines Cyber Dependency")
-    topics_list = [t.strip() for t in topics_env.split(",") if t.strip()]
-
-    # --- QUERY RESOLUTION: Cache -> DeepSeek -> Hardcoded Fallback ---
-    if args.refresh:
-        rl.log("[*] --refresh flag detected. Bypassing cache and requesting new queries.")
-        scholar_queries, ddg_queries = generate_queries(topics_list)
-    else:
-        cached = load_query_cache()
-        if cached:
-            scholar_queries, ddg_queries = cached
-            rl.log(f"[*] Loaded {len(scholar_queries)} Scholar + {len(ddg_queries)} DDG queries from cache.")
+        if args.overnight:
+            rl.log("[!] Overnight flag detected. Initiating hardware preservation...")
         else:
-            rl.log("[*] No query cache found. Generating queries via local DeepSeek...")
+            sys.exit(0)
+
+    if not args.recheck:
+        topics_env = os.getenv("RESEARCH_TOPICS", "NIST 800-82 safety over security, FEMA Lifelines Cyber Dependency")
+        topics_list = [t.strip() for t in topics_env.split(",") if t.strip()]
+
+        # --- QUERY RESOLUTION: Cache -> DeepSeek -> Hardcoded Fallback ---
+        if args.refresh:
+            rl.log("[*] --refresh flag detected. Bypassing cache and requesting new queries.")
             scholar_queries, ddg_queries = generate_queries(topics_list)
+        else:
+            cached = load_query_cache()
+            if cached:
+                scholar_queries, ddg_queries = cached
+                rl.log(f"[*] Loaded {len(scholar_queries)} Scholar + {len(ddg_queries)} DDG queries from cache.")
+            else:
+                rl.log("[*] No query cache found. Generating queries via local DeepSeek...")
+                scholar_queries, ddg_queries = generate_queries(topics_list)
 
-    rl.log("[=] Executing Pluggable Hybrid Search...")
-    rl.section("🔬", "Academic Pass (Google Scholar)")
+        rl.log("[=] Executing Pluggable Hybrid Search...")
+        rl.section("🔬", "Academic Pass (Google Scholar)")
 
-    # Academic Pass
-    for sq in scholar_queries:
-        search_scholar(sq, rules)
+        # Academic Pass
+        for sq in scholar_queries:
+            search_scholar(sq, rules)
 
-    rl.section("📰", "Grey Literature Pass (DDG + Google)")
+        rl.section("📰", "Grey Literature Pass (DDG + Google)")
 
-    # Grey Literature Pass
-    for dq in ddg_queries:
-        search_ddg(dq, rules)
-        search_google(dq, rules)
+        # Grey Literature Pass
+        for dq in ddg_queries:
+            search_ddg(dq, rules)
+            search_google(dq, rules)
+
+    # --- CONDITIONAL SHUTDOWN ---
+    if args.overnight:
+        rl.log("\n" + "="*60)
+        rl.log("RESEARCH TASK COMPLETE. PRESERVING HARDWARE.")
+        rl.log("System shutting down in 60s.")
+        rl.log("="*60)
+        # Flush everything
+        rl._close()
+        os.system("shutdown /s /t 60")
