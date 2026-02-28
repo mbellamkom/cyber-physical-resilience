@@ -18,6 +18,8 @@ trigger: always_on
 ## 🎯 Mission Statement
 To investigate **Dynamic Risk Management** models that shift from rigid security to flexible, risk-informed, and resilient behaviors. Focus: The "Break-Glass" intersection where security is degraded to preserve **All-Souls-on-Site** or prevent **Downstream Physical Disasters**.
 
+**Context & Core Assumption:** This research operates on the core assumption that future critical infrastructure will be comprised of hyper-interdependent cyber-physical systems. Do NOT restrict searches by date; contemporary cyber-physical models, foundational disaster response frameworks, and historical risk and safety baselines are all highly relevant.
+
 ## 🛑 MANDATORY GOVERNANCE & OPERATIONAL DIRECTIVES
 *These take precedence over all analytic tasks.*
 
@@ -61,9 +63,7 @@ The tiers, flags, mappings, and scoring criteria defined in this document are **
     * **Rule:** **Asset-First.** Prioritize Mission Continuity and Hardware Integrity.
 
 ## 🔄 The Evolution Directive (Master Clause)
-This framework is iterative. The AI is required to act as a rigorous auditor and must use the flag 🚩 **[PROMPT_EVOLUTION_TRIGGER]** to suggest a specific update to these Project Rules whenever it encounters *any* unanticipated edge-case. This includes:
-1. **Theoretical Gaps:** A scenario, linguistic nuance, novel risk framework, or sector-specific logic that is not adequately covered by the current Logic Dictionary.
-2. **Procedural/Pipeline Failures:** Any systemic formatting anomaly, broken PDF structure, unreadable page numbers, or script extraction failure that requires the human researcher to patch the pipeline or instructions.
+This framework is iterative. The AI is required to act as a rigorous auditor and must use the flag 🚩 **[PROMPT_EVOLUTION_TRIGGER]** (Active/Blocking) to suggest a specific update to these Project Rules whenever it encounters *any* unanticipated edge-case. Deployment is required for procedural anomalies, script errors, or broken logic requiring immediate human intervention. **Halt execution.**
 
 ## 🛑 Academic Constraint
 All logic changes, framework mappings, and source classification rules used by this Agent **must** be derived directly from the human researcher. The AI is strictly forbidden from autonomously hallucinating new rules, evaluation metrics, or taxonomy categories without prior explicit planning. Furthermore, any changes, additions, or modifications to any files within the `.agent/` directory **must** be explicitly reviewed and approved by the human researcher prior to implementation.
@@ -74,15 +74,18 @@ All logic changes, framework mappings, and source classification rules used by t
 * 🚩 **[REGULATORY_BARRIER]:** Legal/compliance barriers to "flexible" overrides.
 * 🔍 **[SPOOF_VULNERABILITY]:** Sensors vulnerable to cyber-spoofing to force a "fail-open" state.
 * 🔄 **[INCIDENT_FEEDBACK_LOOP]:** Requirements for the system to evolve its "DNA" based on "break-glass" events.
-* 🚩 **[STRUCTURAL_OMISSION]**: A framework, standard, or guidance document that governs cyber-physical or OT/ICS environments but contains **zero explicit acknowledgment** of human life-safety requirements, emergency egress, or physical consequence — despite the systems it governs being directly capable of causing bodily harm, environmental damage, or loss of life. Distinguished from 🟡 [OUT_OF_SCOPE_SILENCE] (where physical safety is genuinely outside the framework's purview) in that [STRUCTURAL_OMISSION] applies when safety *should* be in scope but is absent. These documents are retained as **negative baselines** to quantify the gap between current governance and life-safety-aware frameworks.
+* 🚩 **[STRUCTURAL_OMISSION]**: Applied to a major framework that exhibits a critical governance gap:
+    1. **The Cyber-Blind Spot:** An all-hazards/safety framework for complex environments containing zero acknowledgment of cyber risk.
+    2. **The Safety-Blind Spot:** An OT/cyber standard containing zero acknowledgment of physical life-safety consequence.
 * 🚩 **[CLAIR_SILO]**: Applied when a framework remains trapped in traditional industrial levels (Levels 0–4) and fails to acknowledge Primary Infrastructure (Level -1) or Distributed Sovereignty (Level 6/7) as critical failure vectors.
+* 💡 **[EMERGING_THEME]** (Passive/Tagging): Deploy to tag a document proposing a novel intersection of operational risk, technical controls, and human communication. Do not halt execution; simply tag the document and continue processing.
 
 ### 📖 Logic Dictionary (Technical Translation Layer)
 
 | Thesis / "Dynamic" Term | Global Framework Equivalents (Search Targets) |
 | :--- | :--- |
 | **Asset Security** | Asset Protection, System Availability, Data Protection, Hardening, Access Control, Perimeter Defense, System Uptime, Information Assurance, Anti-Tamper. |
-| **Human Life-Safety** | Personnel Safety, HSE (Health, Safety, Environment), Emergency Egress, Containment, EHS, Physical Security, Occupational Health. |
+| **Human Life-Safety** | Personnel Safety, High-Consequence Life-Safety, Systemic Safety, Emergency Egress, Cyber-Physical Containment, Physical Resilience. |
 | **All-Souls-on-Site** | Personnel, Users, Occupants, POB (Persons on Board), SOB (Souls on Board), Crew, Visitors, Patients, Public, Bystanders, Biological Lifeforms. |
 | **Break-Glass** | Emergency Access, Administrative Bypass, Manual Override, Fail-Open, Exceptional Operating Conditions, Privilege Escalation, SOS Trigger. |
 | **Resilient Flexibility** | Adaptive Control, Graceful Degradation, Operational Continuity, Dynamic Risk Assessment, Context-Aware Policy, Risk-Informed Shift. |
@@ -94,9 +97,10 @@ All logic changes, framework mappings, and source classification rules used by t
 
 ## 📊 Scout Agent Scoring Criteria
 When the AI Discovery Agent evaluates search abstracts and grey literature, it uses the following strict gradient to determine relevance:
-* **HIGH:** Assign a HIGH score in **either** of the following conditions:
+* **HIGH:** Assign a HIGH score in **any** of the following conditions:
     1. **(Positive Baseline):** The document explicitly discusses the tension between safety and security, system overrides, or dynamic risk management in an OT-nexus as its **primary thesis** or **core focus**.
     2. **(Negative Baseline — 🚩 STRUCTURAL_OMISSION):** The document is a major framework, standard, or regulatory instrument that governs OT/ICS or cyber-physical systems **and** is completely silent on human life-safety, emergency egress, or physical consequence. Flag these with 🚩 [STRUCTURAL_OMISSION] and retain as evidence of governance gaps. *Example: A comprehensive ICS cybersecurity standard that specifies access control, patch management, and network segmentation for industrial plants, but never once addresses worker safety, fail-safe states, or emergency shutdown.*
     3. Any document that maps the temporal dynamics (transient responses) or spatial distribution of cascading failures across the 10-level CLAIR hierarchy.
+    4. **Foundational Risk Frameworks:** Documents discussing national/international all-hazards or consequence-driven standards (e.g., ISO, IEC, NIST, NIMS/FEMA).
 * **MEDIUM:** The document discusses relevant cyber-physical concepts (e.g., ICS resilience, structural engineering, or emergency workflows) as its primary focus, but only mentions the direct safety vs. security override conflict tangentially or as a secondary point.
-* **LOW:** The document does not discuss physical safety, emergency operations, or OT/ICS environments. This includes standard IT cybersecurity frameworks (e.g., focused solely on data privacy, encryption, network firewalls, or financial fraud) or fields with zero life-safety/physical consequences.
+* **LOW:** The document does not discuss complex physical safety, emergency operations, or OT/ICS environments. Explicitly reject standard IT cybersecurity frameworks AND routine occupational safety documents (e.g., OSHA hazard checklists, office ergonomics) with no tie to systemic resilience.
