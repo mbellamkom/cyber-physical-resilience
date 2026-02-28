@@ -23,9 +23,9 @@ services:
     image: extractor-manager:latest # Tags the built image for reuse
     container_name: extractor-manager
 
-    # --- Port binding ---
+    # --- Port binding (V-04) ---
     ports:
-      - "8003:8003"
+      - "127.0.0.1:8003:8003"
 
     # --- Network ---
     networks:
@@ -38,7 +38,6 @@ services:
       # Explicit overrides (take precedence over .env values)
       - EXTRACTOR_GPU=cpu
       - NUM_EXTRACTOR_WORKERS=2
-      - TRACE_EVERYTHING=true
       - HOST_CODE_PATH=D:/Docker/extractor
 
     # --- Volume mounts ---
@@ -55,6 +54,13 @@ services:
 
     # --- Restart policy ---
     restart: unless-stopped
+
+    # --- Resource Limits (V-10) ---
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
 
 networks:
   newsbot-network:
