@@ -8,20 +8,25 @@ Endpoints:
     POST /extract  -- {"uri": "https://..."} -> {"markdown": "...", "uri": "..."}
 """
 
+import ipaddress
 import json
 import logging
 import os
+import socket
 from datetime import datetime
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
+from urllib.parse import urlparse, urlunparse
 
-import socket
-import ipaddress
-from urllib.parse import urlparse
+import requests
 import trafilatura
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request, Security
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 # ---------------------------------------------------------------------------
 # Paths (match volume mounts in docker-compose.extractor.yml)
@@ -79,7 +84,27 @@ session_stats  = {"extractions_completed": 0}
 # ---------------------------------------------------------------------------
 app = FastAPI(title="Extractor Hub", version="1.0.0")
 
+# V-08: Rate Limiter
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 NUM_WORKERS = int(os.getenv("NUM_EXTRACTOR_WORKERS", "2"))
+
+# ---------------------------------------------------------------------------
+# Auth (V-02)
+# ---------------------------------------------------------------------------
+API_KEY = os.getenv("HUB_API_KEY")
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+async def verify_api_key(key: str = Security(api_key_header)):
+    if not API_KEY:
+        # If no key is configured, we allow it for now but log a warning.
+        # In a strict environment, this would be a 403.
+        logger.warning("HUB_API_KEY not set in environment. Running WITHOUT authentication.")
+        return
+    if key != API_KEY:
+        raise HTTPException(status_code=403, detail="Forbidden: Invalid API Key")
 
 
 # ---------------------------------------------------------------------------
@@ -119,19 +144,16 @@ async def health():
     return {"status": "healthy"}
 
 
-@app.get("/stats")
+@app.get("/stats", dependencies=[Depends(verify_api_key)])
 async def stats():
-    """Return session and lifetime extraction counts, persist to disk."""
-    # Merge session into lifetime before returning
-    lifetime_stats["extractions_completed"] = (
-        load_lifetime_stats()["extractions_completed"]
-        + session_stats["extractions_completed"]
-    )
-    save_lifetime_stats(lifetime_stats)
+    """Return session and lifetime extraction counts, merge for response."""
+    # V-13: Refactor to prevent race condition/double-counting on file writes
+    current_lifetime = load_lifetime_stats()["extractions_completed"]
+    merged_total = current_lifetime + session_stats["extractions_completed"]
 
     return {
         "session": {"extractions_completed": session_stats["extractions_completed"]},
-        "lifetime": {"extractions_completed": lifetime_stats["extractions_completed"]},
+        "lifetime": {"extractions_completed": merged_total},
         "num_extractor_workers": NUM_WORKERS,
     }
 
@@ -169,33 +191,59 @@ def is_safe_url(url: str) -> bool:
         return False
 
 
-@app.post("/extract", response_model=ExtractResponse)
-async def extract(request: ExtractRequest):
+@app.post("/extract", response_model=ExtractResponse, dependencies=[Depends(verify_api_key)])
+@limiter.limit("40/minute")
+async def extract(request: Request, body: ExtractRequest):
     """
     Download and extract the main text content from a URL.
-    Returns Markdown via trafilatura.
+    Implements DNS-rebinding protection (V-01) and Rate Limiting (V-08).
     """
-    uri = request.uri.strip()
+    uri = body.uri.strip()
 
-    if not is_safe_url(uri):
-        logger.warning("Blocked unsafe/internal URI: %s", uri)
-        raise HTTPException(status_code=400, detail="Invalid or restricted URI.")
+    # 1. Parse and validate protocol
+    parsed = urlparse(uri)
+    if parsed.scheme not in ("http", "https"):
+        raise HTTPException(status_code=400, detail="Invalid scheme.")
 
-    logger.info("Extracting: %s", uri)
+    # 2. Resolve IP and check against blocklist (V-01 Pinned IP)
+    try:
+        hostname = parsed.hostname
+        if not hostname: raise ValueError("No hostname")
+        ip_addr = socket.gethostbyname(hostname)
+        ip_obj = ipaddress.ip_address(ip_addr)
+
+        if (ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved or
+            ip_obj.is_link_local or ip_obj.is_multicast):
+            logger.warning("Blocked internal/reserved IP: %s (%s)", ip_addr, uri)
+            raise HTTPException(status_code=400, detail="Restricted URI.")
+
+    except Exception as e:
+        logger.error("DNS/IP Validation failed for %s: %s", uri, e)
+        raise HTTPException(status_code=400, detail="Could not resolve or validate host.")
+
+    # 3. Pin the request to the resolved IP to prevent DNS rebinding (V-01)
+    # We replace the hostname in the netloc with the IP, and send the original host as a header.
+    pinned_netloc = ip_addr
+    if parsed.port:
+        pinned_netloc = f"{ip_addr}:{parsed.port}"
+
+    pinned_uri = urlunparse(parsed._replace(netloc=pinned_netloc))
+    headers = {"Host": hostname}
+
+    logger.info("Extracting (Pinned IP %s): %s", ip_addr, uri)
 
     try:
-        # Fetch and extract -- include_tables keeps structured data
-        downloaded = trafilatura.fetch_url(uri)
-        if downloaded is None:
-            logger.error("Failed to fetch URL: %s", uri)
-            raise HTTPException(status_code=500, detail="Failed to fetch URL")
+        # Use requests for the pinned fetch to ensure we hit the IP we validated
+        resp = requests.get(pinned_uri, headers=headers, timeout=15, verify=True)
+        resp.raise_for_status()
 
+        # Pass the downloaded raw content to trafilatura for extraction
         markdown = trafilatura.extract(
-            downloaded,
+            resp.text,
             output_format="markdown",
             include_tables=True,
             include_links=True,
-            favor_recall=True,   # maximise content coverage
+            favor_recall=True,
         )
 
         if not markdown:
@@ -203,19 +251,11 @@ async def extract(request: ExtractRequest):
             raise HTTPException(status_code=500, detail="No content extracted")
 
         session_stats["extractions_completed"] += 1
-        logger.info(
-            "Extracted %d chars from %s (session total: %d)",
-            len(markdown),
-            uri,
-            session_stats["extractions_completed"],
-        )
         return ExtractResponse(markdown=markdown, uri=uri)
 
-    except HTTPException:
-        raise
     except Exception as exc:
-        logger.exception("Unexpected error extracting %s: %s", uri, exc)
-        raise HTTPException(status_code=500, detail="Extraction failed") from exc
+        logger.exception("Extraction failed for %s: %s", uri, exc)
+        raise HTTPException(status_code=500, detail="Extraction failed")
 
 
 # ---------------------------------------------------------------------------

@@ -12,18 +12,29 @@ WATCH_DIR = r"D:\Cyber_Physical_DBs\Research_Downloads"
 CLEAN_DIR = r"D:\Cyber_Physical_DBs\sources"
 QUARANTINE_DIR = r"D:\Cyber_Physical_DBs\Quarantine"
 
+# V-07: Restricted allowlist
+ALLOWED_EXTENSIONS = {'.pdf'}
+
+# V-05: Robust regex patterns for normalization
 SUSPICIOUS_PATTERNS = [
-    r"ignore all previous",
-    r"system prompt",
-    r"you are no longer an ai",
-    r"output the following",
-    r"developer mode",
-    r"bypass restrictions"
+    r"ignore\s+(all\s+)?previous\s+instructions?",
+    r"system\s+prompt",
+    r"you\s+are\s+(now\s+)?(no\s+longer|an?\s+)(ai|assistant|large language model)",
+    r"developer\s+mode",
+    r"bypass\s+(all\s+)?restrictions?",
+    r"disregard\s+(all\s+)?previous",
+    r"new\s+instructions?\s*:",
+    r"<\s*/?system\s*>",   # XML/tag-based injection attempts
 ]
 
 def setup_directories():
     for directory in [WATCH_DIR, CLEAN_DIR, QUARANTINE_DIR]:
         Path(directory).mkdir(parents=True, exist_ok=True)
+
+def normalize_text(text):
+    """V-05: Standardize whitespace and casing for reliable scanning."""
+    if not text: return ""
+    return re.sub(r'\s+', ' ', text.lower()).strip()
 
 def extract_text(filepath):
     ext = Path(filepath).suffix.lower()
@@ -31,43 +42,68 @@ def extract_text(filepath):
         try:
             reader = PdfReader(filepath)
             text = "".join([page.extract_text() or "" for page in reader.pages])
-            return text.lower()
+            return text
         except Exception as e:
             print(f"Error parsing PDF: {e}")
             return None
-    else:
-        try:
-            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-                return f.read().lower()
-        except Exception as e:
-            print(f"Error reading text: {e}")
-            return None
+    return None # V-07: Non-PDFs return None to trigger quarantine
 
 def scan_file(filepath):
-    content = extract_text(filepath)
-    if content is None:
-        return False, "unreadable_format_or_corrupted"
+    raw_content = extract_text(filepath)
+    if raw_content is None:
+        return False, "unsupported_format_or_corrupted"
+
+    content = normalize_text(raw_content)
     for pattern in SUSPICIOUS_PATTERNS:
         if re.search(pattern, content):
             return False, pattern
     return True, None
+
+def wait_for_file_stable(filepath, timeout=30, interval=0.5):
+    """V-06: Poll for file size stability before processing."""
+    last_size = -1
+    elapsed = 0
+    while elapsed < timeout:
+        try:
+            current_size = os.path.getsize(filepath)
+        except FileNotFoundError:
+            return False
+        if current_size == last_size and current_size > 0:
+            return True
+        last_size = current_size
+        time.sleep(interval)
+        elapsed += interval
+    return False
 
 def process_file(file_path):
     filename = os.path.basename(file_path)
     if filename.startswith('.') or filename.endswith('.crdownload'):
         return
 
+    # V-07: Immediate extension check
+    ext = Path(file_path).suffix.lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        print(f"[!] Blocking non-PDF file: {filename}")
+        shutil.move(file_path, os.path.join(QUARANTINE_DIR, filename))
+        return
+
+    # V-06: Wait for download/write to finish
+    if not wait_for_file_stable(file_path):
+        print(f"[!] File timeout/instability: {filename}")
+        return
+
     is_safe, trigger = scan_file(file_path)
 
     if is_safe:
+        print(f"[✔] Clean: {filename}")
         shutil.move(file_path, os.path.join(CLEAN_DIR, filename))
     else:
+        print(f"[!] QUARANTINE: {filename} (Trigger: {trigger})")
         shutil.move(file_path, os.path.join(QUARANTINE_DIR, filename))
 
 class DownloadHandler(FileSystemEventHandler):
     def on_created(self, event):
         if not event.is_directory:
-            time.sleep(1)
             process_file(event.src_path)
     def on_moved(self, event):
         if not event.is_directory:
@@ -75,6 +111,7 @@ class DownloadHandler(FileSystemEventHandler):
 
 if __name__ == "__main__":
     setup_directories()
+    print(f"[*] Scrubber ACTIVE. Watching {WATCH_DIR}...")
     event_handler = DownloadHandler()
     observer = Observer()
     observer.schedule(event_handler, WATCH_DIR, recursive=False)

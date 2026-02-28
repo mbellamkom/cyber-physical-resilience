@@ -98,6 +98,7 @@ VECTOR_SIZE = 768
 EXTRACTOR_HUB_URL     = "http://localhost:8003"
 EXTRACTOR_HUB_ENABLED = True
 EXTRACTOR_MAX_CHARS   = 3000  # Truncation limit to stay within Ollama context
+HUB_API_KEY           = os.getenv("HUB_API_KEY")
 
 # --- PERSISTENT TRIAGE TALLY ---
 VERDICTS_FILE = Path("D:/Docker/extractor/stats/research_verdicts.json")
@@ -206,8 +207,11 @@ class RunLogger:
                 self._f.write("\n### 🛑 THERMAL EMERGENCY SHUTDOWN TRIAGED\n")
                 self._f.close()
 
-                # Shutdown in 10s
-                os.system("shutdown /s /t 10")
+                # V-12: Safe shutdown using subprocess
+                if sys.platform == "win32":
+                    subprocess.run(["shutdown", "/s", "/t", "10"], check=False)
+                else:
+                    subprocess.run(["shutdown", "-h", "now"], check=False)
                 sys.exit(1)
         else:
             self._thermal_consecutive_high = 0
@@ -442,9 +446,14 @@ def fetch_full_text(url: str):
     if not EXTRACTOR_HUB_ENABLED:
         return None
     try:
+        headers = {}
+        if HUB_API_KEY:
+            headers["X-API-Key"] = HUB_API_KEY
+
         resp = requests.post(
             f"{EXTRACTOR_HUB_URL}/extract",
             json={"uri": url},
+            headers=headers,
             timeout=15,
         )
         if resp.status_code == 200:
@@ -690,62 +699,60 @@ def python_sieve(title, snippet, link="Unknown"):
             rl.log(f"  [!] Sieve log failure: {e}")
     return passed
 
+def sanitize_content(text: str) -> str:
+    """V-03: Simple sanitization to strip common injection markers and normalize whitespace."""
+    if not text: return ""
+    # Strip potential XML/HTML-like tags used in injection
+    text = re.sub(r'<[^>]+>', ' ', text)
+    # Normalize whitespace
+    text = re.sub(r'\s+', ' ', text)
+    return text.strip()
+
 # --- STAGE 2: LOCAL BOUNCER (OLLAMA) ---
 def evaluate_with_ollama(snippets_bulk):
-    """Sends a batch of snippets to local DeepSeek."""
-    # Build the serialised content block outside the f-string to avoid
-    # Python misinterpreting {{...}} inside the comprehension as a set literal.
-    content_list = [
-        {"index": i, "title": s["title"], "content": s["snippet"]}
-        for i, s in enumerate(snippets_bulk)
-    ]
+    """Sends a batch of snippets to local DeepSeek with V-03 mitigations."""
+    # V-03: Content Sanitization
+    content_list = []
+    for i, s in enumerate(snippets_bulk):
+        sanitized = sanitize_content(s.get("snippet", ""))
+        content_list.append({
+            "index": i,
+            "title": sanitize_content(s.get("title", "")),
+            "content": sanitized
+        })
+
     content_json = json.dumps(content_list, indent=2)
-    prompt = f"""
-You are a research triage assistant for a study on Dynamic Risk Management in cyber-physical systems.
+
+    system_prompt = """You are a research triage assistant for a study on Dynamic Risk Management in cyber-physical systems.
 This research operates on the core assumption that future critical infrastructure will be comprised of hyper-interdependent cyber-physical systems.
 Evaluate each search snippet using the following STRICT scoring rules:
 
 SCORING RULES:
-- HIGH (Positive Baseline): The document explicitly discusses the tension between safety and security,
-  system overrides, emergency access, fail-safe/fail-open behaviors, or dynamic risk management in
-  an OT/ICS or cyber-physical context as its PRIMARY focus.
-- HIGH (Positive Baseline - Foundational): The document details advanced safety models,
-  domain-agnostic risk frameworks, or All-Hazards/Consequence-Driven frameworks (e.g., ISO, IEC, NIST, NIMS/FEMA)
-  as a primary focus.
-- HIGH (Abstract/Paywall): The content appears to be an abstract or summary (e.g. from a paywalled
-  academic paper). Score HIGH if it strongly implies the full document covers life-safety, OT/ICS
-  risk, emergency overrides, or the safety-security intersection. Do NOT penalize abstracts for
-  lacking specific architectural details — reward strong thematic signal.
-- HIGH (Negative Baseline - STRUCTURAL_OMISSION): The document is a major framework, standard, or
-  regulatory instrument governing OT/ICS or cyber-physical systems that is COMPLETELY SILENT on
-  human life-safety, emergency egress, or physical consequences ([Safety-Blind Spot]), OR it is a
-  safety/all-hazards framework that is COMPLETELY SILENT on cyber risk ([Cyber-Blind Spot]).
-  Flag rationale with 🚩 [STRUCTURAL_OMISSION].
-- MEDIUM: The document discusses ICS resilience, emergency workflows, or cyber-physical operations
-  but only mentions safety vs. security overrides tangentially or as a secondary point.
-  NOTE: If a document meets the criteria but introduces a highly novel psychological, communication,
-  or risk model not easily categorized (e.g. cognitive ergonomics, operator linguistics), score it
-  MEDIUM and append the 💡 [EMERGING_THEME] flag to the rationale.
-- LOW: The document does not discuss complex physical safety, emergency operations, or OT/ICS
-  environments. Explicitly reject standard IT cybersecurity frameworks (privacy, encryption, firewalls)
-  AND routine workplace hazard compliance (OSHA ergonomics, scaffolding safety) with no tie to
-  systemic resilience.
+- HIGH (Positive Baseline): The document explicitly discusses the tension between safety and security, system overrides, emergency access, fail-safe/fail-open behaviors, or dynamic risk management in an OT/ICS or cyber-physical context as its PRIMARY focus.
+- HIGH (Positive Baseline - Foundational): The document details advanced safety models, domain-agnostic risk frameworks, or All-Hazards/Consequence-Driven frameworks (e.g., ISO, IEC, NIST, NIMS/FEMA) as a primary focus.
+- HIGH (Abstract/Paywall): The content appears to be an abstract or summary (e.g. from a paywalled academic paper). Score HIGH if it strongly implies the full document covers life-safety, OT/ICS risk, emergency overrides, or the safety-security intersection.
+- HIGH (Negative Baseline - STRUCTURAL_OMISSION): The document is a major framework, standard, or regulatory instrument governing OT/ICS or cyber-physical systems that is COMPLETELY SILENT on human life-safety, emergency egress, or physical consequences. Flag rationale with 🚩 [STRUCTURAL_OMISSION].
+- MEDIUM: The document discusses ICS resilience, emergency workflows, or cyber-physical operations but only mentions safety vs. security overrides tangentially. Append 💡 [EMERGING_THEME] for highly novel models.
+- LOW: Standard IT cybersecurity or routine workplace hazard compliance with no tie to systemic resilience."""
+
+    user_prompt = f"""Evaluate these snippets for relevance. Output ONLY a JSON object with a 'results' key.
 
 SNIPPETS:
 {content_json}
-
-Evaluate each snippet. Output your answer as a JSON object with a single key "results" containing an array:
-{{"results": [
-  {{"index": 0, "relevance": "HIGH" or "MEDIUM" or "LOW", "rationale": "One concise sentence. Prefix with [STRUCTURAL_OMISSION] if applicable."}}
-]}}
 """
     try:
-        response = requests.post("http://localhost:11434/api/generate", json={
+        # V-03: Use System vs User split if supported
+        payload = {
             "model": "deepseek-r1:8b",
-            "prompt": prompt,
+            "prompt": f"System: {system_prompt}\n\nUser: {user_prompt}", # Fallback format for generate API
             "stream": False,
-            "format": "json"
-        }, timeout=120)
+            "format": "json",
+            "options": {
+                "temperature": 0
+            }
+        }
+
+        response = requests.post(f"{OLLAMA_URL}/api/generate", json=payload, timeout=120)
 
         if response.status_code == 200:
             raw = response.json().get("response", "")
@@ -1115,4 +1122,7 @@ if __name__ == "__main__":
         rl.log("="*60)
         # Flush everything
         rl._close()
-        os.system("shutdown /s /t 60")
+        if sys.platform == "win32":
+            subprocess.run(["shutdown", "/s", "/t", "60"], check=False)
+        else:
+            subprocess.run(["shutdown", "-h", "+1"], check=False)

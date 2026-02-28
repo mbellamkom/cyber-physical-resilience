@@ -4,6 +4,39 @@ This document tracks changes made to the AI agent prompts, rules, and logic file
 
 **Academic Rigor Constraint:** All logic changes, prompt updates, and rule modifications recorded in this document are derived directly from the human researcher. The initial logic and source classification rules were developed during a preliminary research planning session between the researcher and the web-based version of Google Gemini. The Google Antigravity AI agent implemented those derived rules into this repository to ensure methodological transparency.
 
+## [2026-02-28] — Security Hardening: Addressing 13 Vulnerabilities (Claude Audit)
+**Files Modified:** `hub.py`, `scout.py`, `scrubber.py`, `librarian.py`, `docker-compose.extractor.yml`, `requirements-hub.txt`
+**Change Type:** Security Architecture & Hardening
+**Authorization:** Researcher-approved via explicit `APPROVED` keyword per Directive 1 (Zero-Implicit Trust).
+
+**Reasoning:**
+Following a static code review by Claude (Anthropic), 13 security vulnerabilities were identified across the research pipeline. These ranged from High-severity SSRF (DNS Rebinding) and lack of authentication to Medium-severity prompt injection and configuration hardening. This update implements a comprehensive defense-in-depth strategy to ensure the integrity of the research and the security of the host environment.
+
+> **Researcher's Note:** I had Claude to do an audit because I wanted to check the first audit's results. Claude did note that the thermal emergency shutdown was an unusual security feature. I hadn't actually considered it a security feature; it was primarily for hardware preservation.
+
+**Modifications:**
+* **SSRF & DNS Rebinding (V-01):** Implemented pinned IP fetching in `hub.py`. Hostnames are resolved once, validated against a blocklist (private/reserved IPs), and the resolved IP is used directly with a fixed `Host` header for all outbound requests.
+* **Authentication & Access Control (V-02, V-04):**
+    * Added `X-API-Key` header validation to all Extractor Hub endpoints.
+    * Updated `scout.py` to securely pass the shared secret `HUB_API_KEY`.
+    * Restricted the hub's port binding to `127.0.0.1` in the Docker configuration.
+* **Prompt Injection Resilience (V-03, V-05):**
+    * Refactored `scout.py` to utilize a strict **System/User prompt separation**.
+    * Implemented content sanitization to strip XML tags and normalize whitespace before LLM injection.
+    * Upgraded `scrubber.py` with a robust `SUSPICIOUS_PATTERNS` regex set and whitespace-normalized scanning.
+* **Pipeline Hardening (V-06, V-07, V-08):**
+    * Replaced the fragile 1s sleep in `scrubber.py` with a **file-size stability check** (V-06) that verifies a download is fully written before scanning.
+    * Enforced a strict `.pdf` allowlist in `scrubber.py` (V-07); non-compliant files are now immediately quarantined.
+    * Integrated `slowapi` into `hub.py` to enforce a rate limit of 40 extractions per minute (V-08).
+* **Infrastructure & Hardware (V-09, V-10, V-12, V-13):**
+    * Added CPU (1.0) and Memory (512MB) limits to the Docker service (V-10).
+    * Removed unused trace environment variables (V-09).
+    * Replaced all `os.system` calls in `scout.py` with `subprocess.run` equivalents for safe, cross-platform hardware preservation (V-12).
+    * Refactored the `hub.py` stats endpoint to eliminate double-counting race conditions (V-13).
+* **Defensive Robustness (V-11):** Added explicit checks and helpful error messages for missing agent rules and skills in `librarian.py`.
+
+---
+
 ## [2026-02-28] — ⚠️ OPERATIONAL ANOMALY: Zero-Implicit Trust Enforcement (Styling Override)
 **Anomaly Type:** Directive 1 — User Authorization Bypass
 **Severity:** Procedural (Minor)
