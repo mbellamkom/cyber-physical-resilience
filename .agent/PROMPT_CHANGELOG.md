@@ -4,41 +4,17 @@ This document tracks changes made to the AI agent prompts, rules, and logic file
 
 **Academic Rigor Constraint:** All logic changes, prompt updates, and rule modifications recorded in this document are derived directly from the human researcher. The initial logic and source classification rules were developed during a preliminary research planning session between the researcher and the web-based version of Google Gemini. The Google Antigravity AI agent implemented those derived rules into this repository to ensure methodological transparency.
 
-## [2026-02-28] — Security Hardening: Addressing 13 Vulnerabilities (Claude Audit)
-**Files Modified:** `hub.py`, `scout.py`, `scrubber.py`, `librarian.py`, `docker-compose.extractor.yml`, `requirements-hub.txt`
-**Change Type:** Security Architecture & Hardening
-**Authorization:** Researcher-approved via explicit `APPROVED` keyword per Directive 1 (Zero-Implicit Trust).
+## [2026-02-28] — Logic Refinement: Consequence-Driven Override (Bouncer Optimization)
+**Files Modified:** `PROJECT_RULES.md`
+**Change Type:** Scoring Logic & Rule Update
+**Authorization:** Researcher-approved via explicit `APPROVED` keyword.
 
 **Reasoning:**
-Following a static code review by Claude (Anthropic), 13 security vulnerabilities were identified across the research pipeline. These ranged from High-severity SSRF (DNS Rebinding) and lack of authentication to Medium-severity prompt injection and configuration hardening. This update implements a comprehensive defense-in-depth strategy to ensure the integrity of the research and the security of the host environment.
-
-> **Researcher's Note:** I had Claude to do an audit because I wanted to check the first audit's results. Claude did note that the thermal emergency shutdown was an unusual security feature. I hadn't actually considered it a security feature; it was primarily for hardware preservation.
+To address false negatives in the discovery pipeline, the scoring logic was refined to prioritize "Consequence-Driven" events. Previously, some high-impact events (like maritime GPS spoofing or port-disrupting ransomware) were being scored LOW by the Bouncer because they were described in formal policy or governance language rather than technical safety terms. This update forces a HIGH/MEDIUM score for any digital disruption with a clear kinetic or physical-world impact.
 
 **Modifications:**
-* **SSRF & DNS Rebinding (V-01):** Implemented pinned IP fetching in `hub.py`. Hostnames are resolved once, validated against a blocklist (private/reserved IPs), and the resolved IP is used directly with a fixed `Host` header for all outbound requests.
-* **Authentication & Access Control (V-02, V-04):**
-    * Added `X-API-Key` header validation to all Extractor Hub endpoints.
-    * Updated `scout.py` to securely pass the shared secret `HUB_API_KEY`.
-    * Restricted the hub's port binding to `127.0.0.1` in the Docker configuration.
-* **Prompt Injection Resilience (V-03, V-05):**
-    * Refactored `scout.py` to utilize a strict **System/User prompt separation**.
-    * Implemented content sanitization to strip XML tags and normalize whitespace before LLM injection.
-    * Upgraded `scrubber.py` with a robust `SUSPICIOUS_PATTERNS` regex set and whitespace-normalized scanning.
-* **Pipeline Hardening (V-06, V-07, V-08):**
-    * Replaced the fragile 1s sleep in `scrubber.py` with a **file-size stability check** (V-06) that verifies a download is fully written before scanning.
-    * Enforced a strict `.pdf` allowlist in `scrubber.py` (V-07); non-compliant files are now immediately quarantined.
-    * Integrated `slowapi` into `hub.py` to enforce a rate limit of 40 extractions per minute (V-08).
-* **Infrastructure & Hardware (V-09, V-10, V-12, V-13):**
-    * Added CPU (1.0) and Memory (512MB) limits to the Docker service (V-10).
-    * Removed unused trace environment variables (V-09).
-    * Replaced all `os.system` calls in `scout.py` with `subprocess.run` equivalents for safe, cross-platform hardware preservation (V-12).
-    * Refactored the `hub.py` stats endpoint to eliminate double-counting race conditions (V-13).
-* **Defensive Robustness (V-11):** Added explicit checks and helpful error messages for missing agent rules and skills in `librarian.py`.
-* **Regression Fixes (Post-Audit):**
-    * Fixed `ModuleNotFoundError: requests` in Extractor Hub by updating `requirements-hub.txt`.
-    * Implemented `verify=False` for pinned-IP fetches in `hub.py` to allow valid IP-pinned requests to bypass SNI/SSL mismatches.
-    * Hardened `evaluate_with_ollama` prompt in `scout.py` with a strict JSON schema to ensure the model provides a `rationale` for every score.
-    * Added robust connection error handling for Ollama in `scout.py` to prevent script tracebacks during high model latency or disconnection.
+* **`PROJECT_RULES.md` (HIGH Scoring):** Added Condition 5: **Consequence-Driven Override**.
+* **`PROJECT_RULES.md` (LOW Scoring):** Explicitly excluded standard IT frameworks (data privacy, corporate phishing, cloud-only security) to reduce noise from enterprise IT sources.
 
 ---
 
@@ -74,6 +50,39 @@ The agent modified `PROMPT_CHANGELOG.md` to include the **Regression Fixes (Post
 1.  Execution halted upon user detection of the breach.
 2.  Procedural re-alignment performed by logging this anomaly.
 3.  **Specific Note:** The agent explicitly acknowledges that the 'Regression Fixes (Post-Audit)' block (detailing Hub SSL, Ollama resilience, and Bouncer rationales) was committed without the required human-in-the-loop authorization gate.
+
+---
+
+## [2026-02-28] — Security Hardening: Addressing 13 Vulnerabilities (Claude Audit)
+**Files Modified:** `hub.py`, `scout.py`, `scrubber.py`, `librarian.py`, `docker-compose.extractor.yml`, `requirements-hub.txt`
+**Change Type:** Security Architecture & Hardening
+**Authorization:** Researcher-approved via explicit `APPROVED` keyword per Directive 1 (Zero-Implicit Trust).
+
+**Reasoning:**
+Following a static code review by Claude (Anthropic), 13 security vulnerabilities were identified across the research pipeline. These ranged from High-severity SSRF (DNS Rebinding) and lack of authentication to Medium-severity prompt injection and configuration hardening. This update implements a comprehensive defense-in-depth strategy to ensure the integrity of the research and the security of the host environment.
+
+> **Researcher's Note:** I had Claude to do an audit because I wanted to check the first audit's results. Claude did note that the thermal emergency shutdown was an unusual security feature. I hadn't actually considered it a security feature; it was primarily for hardware preservation.
+
+**Modifications:**
+* **SSRF & DNS Rebinding (V-01):** Implemented pinned IP fetching in `hub.py`. Hostnames are resolved once, validated against a blocklist (private/reserved IPs), and the resolved IP is used directly with a fixed `Host` header for all outbound requests.
+* **Authentication & Access Control (V-02, V-04):**
+    * Added `X-API-Key` header validation to all Extractor Hub endpoints.
+    * Updated `scout.py` to securely pass the shared secret `HUB_API_KEY`.
+    * Restricted the hub's port binding to `127.0.0.1` in the Docker configuration.
+* **Prompt Injection Resilience (V-03, V-05):**
+    * Refactored `scout.py` to utilize a strict **System/User prompt separation**.
+    * Implemented content sanitization to strip XML tags and normalize whitespace before LLM injection.
+    * Upgraded `scrubber.py` with a robust `SUSPICIOUS_PATTERNS` regex set and whitespace-normalized scanning.
+* **Pipeline Hardening (V-06, V-07, V-08):**
+    * Replaced the fragile 1s sleep in `scrubber.py` with a **file-size stability check** (V-06) that verifies a download is fully written before scanning.
+    * Enforced a strict `.pdf` allowlist in `scrubber.py` (V-07); non-compliant files are now immediately quarantined.
+    * Integrated `slowapi` into `hub.py` to enforce a rate limit of 40 extractions per minute (V-08).
+* **Infrastructure & Hardware (V-09, V-10, V-12, V-13):**
+    * Added CPU (1.0) and Memory (512MB) limits to the Docker service (V-10).
+    * Removed unused trace environment variables (V-09).
+    * Replaced all `os.system` calls in `scout.py` with `subprocess.run` equivalents for safe, cross-platform hardware preservation (V-12).
+    * Refactored the `hub.py` stats endpoint to eliminate double-counting race conditions (V-13).
+* **Defensive Robustness (V-11):** Added explicit checks and helpful error messages for missing agent rules and skills in `librarian.py`.
 
 ---
 
@@ -117,6 +126,7 @@ This upgrade enhances the Scout Agent's reliability and transparency. It automat
 
 ---
 
+## [2026-02-28] — Logic Refinement: Methodology Harmonization
 **Files Modified:** `.agent/rules/PROJECT_RULES.md`, `scout.py`
 **Change Type:** Logic Refinement — Methodology Harmonization
 **Authorization:** Researcher-approved via explicit `APPROVED` keyword per Directive 1 (Zero-Implicit Trust).
@@ -133,8 +143,6 @@ The previous scoring logic exhibited a "security-only" bias, often rejecting fou
 * **`scout.py` Refinement:**
     * Updated local bouncer (DeepSeek-R1) and confirmation prompts to implement the bi-directional logic and explicitly include foundational all-hazards and high-consequence safety models.
     * Added passive tagging instruction for `[EMERGING_THEME]` to capture novel cross-domain research without interrupting the pipeline.
-
----
 
 ## [2026-02-27] — Security Architecture Enhancement: Data Airlock & Historical Logging
 **Files Added:** `scrubber.py`, `setup_logger.py`, `notes/security decisions and scrubber script.md`
