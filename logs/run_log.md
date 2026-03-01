@@ -318,3 +318,194 @@ INITIATING DATA FLUSH AND IMMEDIATE SHUTDOWN.
 | 🔴 LOW / Rejected | 0 |
 | 🔵 Triage (Bouncer) rejections | 0 |
 | ⚪ Sieve rejections | 0 |
+
+---
+
+## 🚀 Run — 2026-02-28 19:10
+
+[*] Loaded 3 Scholar + 3 DDG queries from cache.
+[=] Executing Pluggable Hybrid Search...
+
+### 🔬 Academic Pass (Google Scholar)
+
+> [!] Thermal sensors unavailable via WMI.
+
+### 📚 Scholar Search
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Scholar Search: (("safety over security") OR (life-safety engineering)) AND (critical infrastructure OR OT OR industrial control systems) AND (cybersecurity OR risk management)
+[*] Processing batch of 3 snippets through Local Bouncer...
+[Hub] Enriched 0/3 items with full text (3 fallback to snippet).
+  -> [Bouncer] 🔴 LOW: Cybersecurity threats, vulnerability and analysis
+  -> [Bouncer] 🔴 LOW: The economics of critical infrastructure controls
+  -> [Bouncer] 🔴 LOW: Cybersecurity Risks to Industrial Control Systems
+
+### 📚 Scholar Search
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Scholar Search: ((safety-first approach) OR (life safety principles)) AND (OT environments OR ICS OR industrial automation) AND (cybersecurity risks OR resilience)
+
+### 📚 Scholar Search
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Scholar Search: ((engineering safety) AND (cybersecurity)) AND (critical infrastructure systems OR OT OR ICS) AND (regulatory frameworks OR standards)
+[*] Processing batch of 2 snippets through Local Bouncer...
+[Hub] Enriched 0/2 items with full text (2 fallback to snippet).
+  -> [Bouncer] 🔴 LOW: When the future meets the past: Can safety and cyb
+  -> [Bouncer] 🔴 LOW: Regulating risks within complex sociotechnical sys
+
+### 📰 Grey Literature Pass (DDG + Google)
+
+> [!] Thermal sensors unavailable via WMI.
+
+### 🌐 Web Search (DDG)
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Web Search (DDG): Life-safety engineering principles in OT cybersecurity for energy sector critical infrastructure
+[*] Processing batch of 3 snippets through Local Bouncer...
+[Hub] Enriched 0/3 items with full text (3 fallback to snippet).
+  -> [Bouncer] 🔴 LOW: Operational Technology Cybersecurity for Energy Sy
+  -> [Bouncer] 🔴 LOW: Principles of operational technology cybersecurity
+  -> [Bouncer] 🔴 LOW: A Turning Point for Cyber Physical Resilience - In
+
+### 🔎 Web Search (Google)
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Web Search (Google): Life-safety engineering principles in OT cybersecurity for energy sector critical infrastructure
+[!] Google Search unavailable: run `pip install googlesearch-python` to enable.
+
+### 🌐 Web Search (DDG)
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Web Search (DDG): Regulatory gaps in safety over security for water treatment plants
+[*] Processing batch of 4 snippets through Local Bouncer...
+[Hub] Enriched 0/4 items with full text (4 fallback to snippet).
+  -> [Bouncer] 🔴 LOW: Industrial Assessment Tools of Risks Associated wi
+  -> [Bouncer] 🔴 LOW: GAO-06-390, Securing Wastewater Facilities: Utilit
+
+#### 📊 Session Summary
+
+| Metric | Count |
+| :--- | :--- |
+| Total evaluated | 10 |
+| 🟢🟡 HIGH / MEDIUM | 0 |
+| 🔴 LOW / Rejected | 10 |
+| 🔵 Triage (Bouncer) rejections | 9 |
+| ⚪ Sieve rejections | 12 |
+
+
+---
+
+## 🚀 Run — 2026-02-28 19:24
+
+[+] Backfilled 1 historic entries into 'scout_memory'.
+[*] Loaded 3 Scholar + 3 DDG queries from cache.
+[=] Executing Pluggable Hybrid Search...
+
+### 🔬 Academic Pass (Google Scholar)
+
+> [!] Thermal sensors unavailable via WMI.
+
+### 📚 Scholar Search
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Scholar Search: (("safety over security") OR (life-safety engineering)) AND (critical infrastructure OR OT OR industrial control systems) AND (cybersecurity OR risk management)
+
+### 📚 Scholar Search
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Scholar Search: ((safety-first approach) OR (life safety principles)) AND (OT environments OR ICS OR industrial automation) AND (cybersecurity risks OR resilience)
+
+### 📚 Scholar Search
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Scholar Search: ((engineering safety) AND (cybersecurity)) AND (critical infrastructure systems OR OT OR ICS) AND (regulatory frameworks OR standards)
+
+### 📰 Grey Literature Pass (DDG + Google)
+
+> [!] Thermal sensors unavailable via WMI.
+
+### 🌐 Web Search (DDG)
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Web Search (DDG): Life-safety engineering principles in OT cybersecurity for energy sector critical infrastructure
+[*] Processing batch of 4 snippets through Local Bouncer...
+[Hub] Enriched 0/4 items with full text (4 fallback to snippet).
+  -> [Bouncer] 🔴 LOW: ACSC and CISA Launch Critical OT Cybersecurity Gui
+     Rationale: This snippet focuses on standard IT cybersecurity guidelines for OT environments, lacking discussion of safety overrides or physical consequences.
+  -> [Bouncer] 🔴 LOW: #HowTo: Protect Critical Infrastructure from Cyber
+     Rationale: This snippet discusses protecting CI from cybercriminals but does not address safety vs. security tensions or emergency overrides.
+  -> [Bouncer] 🔴 LOW: ACSC and CISA Launch Critical OT Cybersecurity Gui
+     Rationale: This snippet is another OT cybersecurity guideline launch, similar to index 0, with no mention of life-safety or emergency management.
+  -> [Bouncer] 🟡 MEDIUM: Cybersecurity Lifecycle Services for Industrial Pl
+     Rationale: This snippet mentions mitigating industrial risk for safety, security, and cybersecurity, but does not explicitly discuss dynamic risk management or emergency overrides.
+  -> [DeepSeek Confirming] Cybersecurity Lifecycle Services for Industrial Pl...
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🟢 HIGH: Cybersecurity Lifecycle Services for Industrial Pl
+
+### 🔎 Web Search (Google)
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Web Search (Google): Life-safety engineering principles in OT cybersecurity for energy sector critical infrastructure
+[!] Google Search unavailable: run `pip install googlesearch-python` to enable.
+
+### 🌐 Web Search (DDG)
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Web Search (DDG): Regulatory gaps in safety over security for water treatment plants
+  -> ⚪ Sieve rejected: 2024 Roadmap to a Secure and Resilient Water and W...
+[*] Processing batch of 2 snippets through Local Bouncer...
+[Hub] Enriched 1/2 items with full text (1 fallback to snippet).
+  -> [Bouncer] 🟢 HIGH: Navigating Cybersecurity Threats and Regulatory Co
+     Rationale: The document focuses on cybersecurity in water systems, which involves safety and security tensions, regulatory compliance, and incident response, aligning with dynamic risk management in cyber-physical systems.
+  -> [DeepSeek Confirming] Navigating Cybersecurity Threats and Regulatory Co...
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🟢 HIGH: Navigating Cybersecurity Threats and Regulatory Co
+  -> [Bouncer] 🔴 LOW: Impacts of Regulations and Compliance for Plant Op
+     Rationale: The snippet discusses general compliance and public health, but lacks specific details on dynamic risk management, emergency overrides, or the safety-security intersection in cyber-physical systems.
+
+### 🔎 Web Search (Google)
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Web Search (Google): Regulatory gaps in safety over security for water treatment plants
+[!] Google Search unavailable: run `pip install googlesearch-python` to enable.
+
+### 🌐 Web Search (DDG)
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Web Search (DDG): Application of life-cycle safety engineering in maritime critical infrastructure cyber resilience
+[*] Processing batch of 4 snippets through Local Bouncer...
+[Hub] Enriched 0/4 items with full text (4 fallback to snippet).
+  -> [Bouncer] 🟡 MEDIUM: Safety - Wikipedia
+     Rationale: The snippet discusses safety in complex systems but does not explicitly address the safety-security tension or dynamic risk management in a cyber-physical context.
+  -> [DeepSeek Confirming] Safety - Wikipedia...
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: Safety - Wikipedia
+  -> [Bouncer] 🟡 MEDIUM: Modern Technologies Enabling Innovative Methods fo
+     Rationale: The snippet focuses on maritime infrastructure resilience but does not explicitly discuss safety-security tensions or emergency overrides in a cyber-physical systems context.
+  -> [DeepSeek Confirming] Modern Technologies Enabling Innovative Methods fo...
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🟢 HIGH: Modern Technologies Enabling Innovative Methods fo
+  -> [Bouncer] 🟡 MEDIUM: Protecting Critical Maritime Infrastructure : A Mu
+     Rationale: The snippet emphasizes resilience frameworks but does not explicitly address the safety-security tension or dynamic risk management in a cyber-physical systems context.
+  -> [DeepSeek Confirming] Protecting Critical Maritime Infrastructure : A Mu...
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: Protecting Critical Maritime Infrastructure : A Mu
+  -> [Bouncer] 🔴 LOW: (PDF) Unmanned surface vehicles in maritime critic
+     Rationale: The snippet discusses unmanned vehicles in maritime security but does not address safety-security tensions, emergency overrides, or dynamic risk management in a cyber-physical systems context.
+
+### 🔎 Web Search (Google)
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Web Search (Google): Application of life-cycle safety engineering in maritime critical infrastructure cyber resilience
+[!] Google Search unavailable: run `pip install googlesearch-python` to enable.
+
+#### 📊 Session Summary
+
+| Metric | Count |
+| :--- | :--- |
+| Total evaluated | 10 |
+| 🟢🟡 HIGH / MEDIUM | 3 |
+| 🔴 LOW / Rejected | 7 |
+| 🔵 Triage (Bouncer) rejections | 5 |
+| ⚪ Sieve rejections | 12 |

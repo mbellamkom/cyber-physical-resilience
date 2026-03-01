@@ -75,8 +75,7 @@ RESEARCH_PATH = Path(os.getenv("RESEARCH_PATH") or ".")
 LOGS_DIR = RESEARCH_PATH / "logs"
 LOGS_DIR.mkdir(exist_ok=True)
 MEMORY_FILE = LOGS_DIR / "seen_sources.md"
-REJECTED_LOG = LOGS_DIR / "rejected_sources.md"
-TRIAGE_LOG = LOGS_DIR / "triage_log.md"
+REJECTION_AUDIT = LOGS_DIR / "rejection_audit.md"
 RUN_LOG = LOGS_DIR / "run_log.md"
 
 # --- D-DRIVE MARKDOWN MIRROR ---
@@ -130,15 +129,10 @@ if not MEMORY_FILE.exists():
         f.write("| Title | Date | Relevance | Rationale |\n")
         f.write("| :--- | :--- | :--- | :--- |\n")
 
-if not REJECTED_LOG.exists():
-    with open(REJECTED_LOG, "w", encoding="utf-8") as f:
-        f.write("# Rejected Sources Log\n")
-        f.write("> Documents scored **LOW** by the Scout Agent — not relevant to the core thesis.\n\n")
-
-if not TRIAGE_LOG.exists():
-    with open(TRIAGE_LOG, "w", encoding="utf-8") as f:
-        f.write("# Triage Log\n")
-        f.write("> Documents filtered by the **Local Bouncer** (DeepSeek) before reaching Gemini confirmation.\n\n")
+if not REJECTION_AUDIT.exists():
+    with open(REJECTION_AUDIT, "w", encoding="utf-8") as f:
+        f.write("# Rejection Audit Log\n")
+        f.write("> Documents scored **LOW** by the Scout Agent (Stage 2/3) or flagged as anomalies.\n\n")
 
 # --- RUN LOGGER ---
 SCORE_EMOJI = {"HIGH": "🟢", "MEDIUM": "🟡", "LOW": "🔴", "SILENT_ANOMALY": "🔵"}
@@ -431,8 +425,10 @@ def embed_text(text):
         )
         if resp.status_code == 200:
             return resp.json().get("embedding")
+    except requests.exceptions.ConnectionError:
+        rl.log("[!] Ollama offline: Connection refused for embeddings.")
     except Exception as e:
-        print(f"[!] Embedding failed: {e}")
+        rl.log(f"[!] Embedding failed: {e}")
     return None
 
 
@@ -651,27 +647,18 @@ def notify_detailed(title, link, score, rationale, force=False):
         if not force:
             log_discovery(title, link, score, rationale)
 
-def log_rejection(title, link, rationale):
-    """Logs low-quality hits to rejected_sources.md before marking them as seen."""
+def log_rejection(title, link, rationale, score="LOW"):
+    """Logs LOW-relevance or anomalous hits to rejection_audit.md and seen_sources."""
     if is_new_discovery(link):
+        badge = SCORE_EMOJI.get(score, "🔴")
         today = datetime.datetime.now().strftime("%Y-%m-%d")
-        with open(REJECTED_LOG, "a", encoding="utf-8") as f:
-            f.write(f"### 🔴 LOW — [{title}]({link})\n")
-            f.write(f"- **Date:** {today}\n")
-            f.write(f"- **Rationale:** {rationale}\n\n")
-        log_discovery(title, link, "LOW", rationale)
-
-def log_triage_rejection(title, link, score, rationale):
-    """Logs Local Bouncer rejections to triage_log.md."""
-    if is_new_discovery(link):
-        badge = SCORE_EMOJI.get(score, "")
-        today = datetime.datetime.now().strftime("%Y-%m-%d")
-        with open(TRIAGE_LOG, "a", encoding="utf-8") as f:
+        with open(REJECTION_AUDIT, "a", encoding="utf-8") as f:
             f.write(f"### {badge} {score} — [{title}]({link})\n")
             f.write(f"- **Date:** {today}\n")
             f.write(f"- **Rationale:** {rationale}\n\n")
         log_discovery(title, link, score, rationale)
-        rl.triage()
+        if score != "LOW":
+            rl.triage() # Counts as anomalous triage
 
 # --- STAGE 1: PYTHON SIEVE ---
 SIEVE_KEYWORDS = [
@@ -735,7 +722,19 @@ SCORING RULES:
 - MEDIUM: The document discusses ICS resilience, emergency workflows, or cyber-physical operations but only mentions safety vs. security overrides tangentially. Append 💡 [EMERGING_THEME] for highly novel models.
 - LOW: Standard IT cybersecurity or routine workplace hazard compliance with no tie to systemic resilience."""
 
-    user_prompt = f"""Evaluate these snippets for relevance. Output ONLY a JSON object with a 'results' key.
+    user_prompt = f"""Evaluate these snippets for relevance.
+Value the rationale: provide a concise, one-sentence explanation for EACH score.
+
+Output MUST be a JSON object with this EXACT structure:
+{{
+  "results": [
+    {{
+      "index": 0,
+      "relevance": "HIGH" | "MEDIUM" | "LOW",
+      "rationale": "One concise sentence explaining why."
+    }}
+  ]
+}}
 
 SNIPPETS:
 {content_json}
@@ -832,9 +831,10 @@ def process_batch(batch, rules_text):
                 title, link, snippet = item["title"], item["link"], item["snippet"]
                 badge = SCORE_EMOJI.get(rel, "")
                 rl.log(f"  -> [Bouncer] {badge} {rel}: {title[:50]}")
+                rl.log(f"     Rationale: {rat}")
 
                 if rel in ["LOW", "SILENT_ANOMALY"]:
-                    log_triage_rejection(title, link, rel, rat)
+                    log_rejection(title, link, rat, score=rel)
                 else:
                     # STAGE 3: DEEPSEEK CONFIRMATION
                     rl.log(f"  -> [DeepSeek Confirming] {title[:50]}...")
