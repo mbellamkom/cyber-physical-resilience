@@ -365,7 +365,7 @@ def mirror_logs():
     """Copies all markdown log files to DB_MIRROR_DIR. Silently skips if unavailable."""
     try:
         DB_MIRROR_DIR.mkdir(parents=True, exist_ok=True)
-        for src in (MEMORY_FILE, REJECTED_LOG, TRIAGE_LOG, RUN_LOG):
+        for src in (MEMORY_FILE, REJECTION_AUDIT, RUN_LOG):
             if src.exists():
                 shutil.copy2(src, DB_MIRROR_DIR / src.name)
     except Exception:
@@ -544,9 +544,9 @@ def recheck_low_sources(rules_text: str):
 
 
 def ingest_triage_logs(qdrant):
-    """Parses triage_log.md and rejected_sources.md and upserts entries into triage_memory."""
+    """Parses rejection_audit.md and upserts entries into triage_memory."""
     entries = []
-    for log_file in [TRIAGE_LOG, REJECTED_LOG]:
+    for log_file in [REJECTION_AUDIT]:
         if not log_file.exists():
             continue
         with open(log_file, "r", encoding="utf-8") as f:
@@ -775,12 +775,18 @@ SNIPPETS:
                     return json.loads(match.group())
             except json.JSONDecodeError as e:
                 rl.log(f"[!] Local Bouncer parse failed: {e}")
+        else:
+            rl.log(f"[!] Local Bouncer returned error {response.status_code}: {response.text[:200]}")
     except Exception as e:
         rl.log(f"[!] Local Bouncer offline or failed: {e}")
     return None
 
 def process_final_score(item, rel, rat):
     """Handles the final routing for scoring."""
+    if rel is None:
+        rl.log(f"  [!] Skipping log for {item.get('title', 'Unknown')[:50]}: Model Unavailable.")
+        return
+
     title, link = item["title"], item["link"]
     badge = SCORE_EMOJI.get(rel, "")
     rl.log(f"  -> [Final] {badge} {rel}: {title[:50]}")
@@ -839,7 +845,10 @@ def process_batch(batch, rules_text):
                     # STAGE 3: DEEPSEEK CONFIRMATION
                     rl.log(f"  -> [DeepSeek Confirming] {title[:50]}...")
                     ds_data = evaluate_snippet(title, snippet, rules_text)
-                    process_final_score(item, ds_data.get("relevance", "LOW"), ds_data.get("rationale", "No rationale."))
+                    if ds_data and ds_data.get("relevance"):
+                        process_final_score(item, ds_data.get("relevance"), ds_data.get("rationale", "No rationale."))
+                    else:
+                        rl.log(f"  [!] DeepSeek Confirmation failed for {title[:50]}. Source preserved as unseen.")
                     time.sleep(3)
     except Exception as e:
         rl.log(f"[!] Error parsing batch results: {e}")
@@ -960,9 +969,11 @@ Content: {snippet}"""
                 return {"relevance": "HIGH", "rationale": rationale}
             else:
                 return {"relevance": "LOW", "rationale": rationale}
+        else:
+            rl.log(f"[!] Local evaluation error {resp.status_code}: {resp.text[:200]}")
     except Exception as e:
         rl.log(f"[!] Local evaluation failed: {e}")
-    return {"relevance": "LOW", "rationale": "Local model unavailable."}
+    return None
 
 # --- SEARCH ENGINES ---
 

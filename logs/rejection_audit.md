@@ -108,3 +108,78 @@
 ### 🔴 LOW — [Protecting Critical Maritime Infrastructure : A Multi-Domain... - RSIS](https://rsis.edu.sg/rsis-publication/rsis/protecting-critical-maritime-infrastructure-a-multi-domain-approach-to-maritime-security-governance/)
 - **Date:** 2026-02-28
 - **Rationale:** The text focuses on resilience through collaboration and legal frameworks but does not explicitly discuss the intersection of cyber-physical systems or domain-agnostic risk frameworks.
+### 🔴 LOW — [ICS/SCADA system security for CPS](https://link.springer.com/chapter/10.1007/978-3-319-75880-0_5)
+- **Date:** 2026-03-02
+- **Rationale:** Local model unavailable.
+
+### 🔴 LOW — [Protecting industrial control systems from electronic threats](https://books.google.com/books?hl=en&lr=&id=ugOsO17iHB8C&oi=fnd&pg=PR5&dq=%22break-glass%22+OR+%22emergency+override%22+OR+%22fail-open%22+AND+(%22industrial+control%22+OR+%22operational+technology%22)+AND+(safety+AND+security)&ots=sWMuVQpI2J&sig=dGJIMLVEVEJIDQdiig_xIJ7Mx54)
+- **Date:** 2026-03-02
+- **Rationale:** Local model unavailable.
+
+### 🔴 LOW — [An efficient attribute-based access control system with break-glass capability for cloud-assisted industrial control system](https://www.aimspress.com/aimspress-data/mbe/2021/4/PDF/mbe-18-04-179.pdf)
+- **Date:** 2026-03-02
+- **Rationale:** Local model unavailable.
+
+### 🔴 LOW — [Major accidents triggered by malicious manipulations of the control system in process facilities](https://www.sciencedirect.com/science/article/pii/S0925753520304409)
+- **Date:** 2026-03-02
+- **Rationale:** Local model unavailable.
+
+### 🔴 LOW — [Dynamic Risk Assessment for Critical Infrastructures under Attack](https://www.academia.edu/download/69991316/Project_Synoptic_Dynamic_Risk_Assessment_for_Critical_Infrastructures_under_Attack_Blondel_Seumo_.pdf)
+- **Date:** 2026-03-02
+- **Rationale:** Local model unavailable.
+
+### 🔴 LOW — [Probabilistic Dynamic Resilience of Critical Infrastructure in Multi-Hazard Environments](https://macsphere.mcmaster.ca/handle/11375/29525)
+- **Date:** 2026-03-02
+- **Rationale:** Local model unavailable.
+
+### 🔴 LOW — [Hazard-responsive digital twin for climate-driven urban resilience and equity](https://arxiv.org/abs/2510.22941)
+- **Date:** 2026-03-02
+- **Rationale:** Local model unavailable.
+
+### 🔴 LOW — [NIST Special Publication (SP) 800-82 Rev. 3, Guide to Operational Technology (OT) Security](https://csrc.nist.gov/pubs/sp/800/82/r3/final)
+- **Date:** 2026-03-02
+- **Rationale:** Local model unavailable.
+
+### 🔴 LOW — [NIST Special Publication (SP) 800-82 (Withdrawn), Guide to Industrial Control Systems (ICS) Security](https://csrc.nist.gov/pubs/sp/800/82/final)
+- **Date:** 2026-03-02
+- **Rationale:** Local model unavailable.
+
+### 🔴 LOW — [NIST Special Publication (SP) 800-82 Rev. 2 (Withdrawn), Guide to Industrial Control Systems (ICS) Security](https://csrc.nist.gov/pubs/sp/800/82/r2/final)
+- **Date:** 2026-03-02
+- **Rationale:** Local model unavailable.
+
+### 🔴 LOW — [NIST Special Publication (SP) 800-82 Rev. 3 (Withdrawn), Guide to Operational Technology (OT) Security](https://csrc.nist.gov/pubs/sp/800/82/r3/ipd)
+- **Date:** 2026-03-02
+- **Rationale:** Local model unavailable.
+
+### 🔴 LOW — [3.2 Critical Infrastructure | FEMA.gov](https://www.fema.gov/cbrn-tools/key-planning-factors-chemical-incident/kpf1/3/3-2)
+- **Date:** 2026-03-02
+- **Rationale:** Local model unavailable.
+
+### 🔴 LOW — [Critical Cyber Asset Identification and Prioritization Checklist](https://www.fema.gov/sites/default/files/documents/fema_cyber-asset-id-prioritization-checklist.pdf)
+- **Date:** 2026-03-02
+- **Rationale:** Local model unavailable.
+
+### 🔴 LOW — [Mission Areas and Core Capabilities | FEMA.gov](https://www.fema.gov/emergency-managers/national-preparedness/mission-core-capabilities)
+- **Date:** 2026-03-02
+- **Rationale:** Local model unavailable.
+
+### 🔴 LOW — [Planning Considerations for Cyber Incidents Guidance for Emergency Managers](https://www.fema.gov/sites/default/files/documents/fema_planning-considerations-cyber-incidents_2023.pdf)
+- **Date:** 2026-03-02
+- **Rationale:** Local model unavailable.
+
+### 🔴 LOW — [Industrial Control Systems | Cybersecurity and ... - CISA](https://www.cisa.gov/topics/industrial-control-systems)
+- **Date:** 2026-03-02
+- **Rationale:** Local model unavailable.
+
+### 🔴 LOW — [Foundations for OT Cybersecurity: Asset Inventory Guidance ...](https://www.cisa.gov/resources-tools/resources/foundations-ot-cybersecurity-asset-inventory-guidance-owners-and-operators)
+- **Date:** 2026-03-02
+- **Rationale:** Local model unavailable.
+
+### 🔴 LOW — [Foundations for OT Cybersecurity: Asset Inventory Guidance ...](https://www.cisa.gov/sites/default/files/2025-08/joint-guide-foundations-for-OT-cybersecurity-asset-inventory-guidance_508c.pdf)
+- **Date:** 2026-03-02
+- **Rationale:** Local model unavailable.
+
+### 🔴 LOW — [ASD’s ACSC, CISA, FBI, NSA, and International Partners ...](https://www.cisa.gov/news-events/alerts/2024/10/01/asds-acsc-cisa-fbi-nsa-and-international-partners-release-guidance-principles-ot-cybersecurity)
+- **Date:** 2026-03-02
+- **Rationale:** Local model unavailable.

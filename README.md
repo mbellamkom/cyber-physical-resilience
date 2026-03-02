@@ -11,6 +11,7 @@ This is an evolving project and is constantly being developed as the research pr
 4. [Adapting this Framework for Your Own Research](#4-adapting-this-framework-for-your-own-research)
 5. [Directory Structure](#5-directory-structure)
 6. [Getting Started](#6-getting-started)
+7. [Research Cheatsheet (Quick Ref)](#7-research-cheatsheet-quick-ref)
 
 ---
 
@@ -94,6 +95,9 @@ This file dictates *how* the AI reads the text and formats its notes:
   * **The Rationale:** Many IT-centric frameworks are "Silent" on safety. Without this scope gate, the pipeline would be cluttered with irrelevant audits or false-positive conflicts where standard IT security practices (like locking a server rack) are flagged as "safety violations" simply because they restrict access. This ensures we only ingest data with a true operational technology (OT) nexus.
 * **70% Parity Mapping:** When comparing different global frameworks, the AI is forbidden from using simple keyword matching. A mapping is only valid if it meets 3 out of 4 functional criteria: *Target* (same asset), *Intent* (same goal), *Hazard* (same consequence), and *Phase* (same timeline).
 * **FEMA Lifeline Translation:** To bridge the gap between digital and physical impacts, the AI maps any extracted cyber failures directly to FEMA's 7 Community Lifelines (e.g., mapping a "network outage" directly to the physical "Energy" impact). These lifelines are mapped to ISO critical sectors to account for international frameworks and terminology.
+* **[CLAIR_SILO]**: Identifies frameworks that fail to acknowledge failure vectors outside traditional SCADA boundaries (e.g., Level -1 Primary Infrastructure or Level 6/7 Cloud Services). See the **[CLAIR Model](https://isc.sans.edu/diaryimages/images/The_CLAIR_Model.pdf)** for more details.
+* **Logical Dependency**: Operational state changes driven by external mandates, policy, or regulations.
+* **Geographic Dependency**: Shared physical location risks, such as shared utility trenches.
 
 ### C. The Transparency Log ([.agent/PROMPT_CHANGELOG.md](./.agent/PROMPT_CHANGELOG.md))
 To ensure complete academic transparency, any adjustments made to the AI's logic, output constraints, or project rules are formally documented in the [.agent/PROMPT_CHANGELOG.md](./.agent/PROMPT_CHANGELOG.md) file. This prevents "shadow modifications" of the research methodology and guarantees that the AI's operating parameters remain auditable from the project's inception.
@@ -115,10 +119,9 @@ To use it for a different project, you will need to replace the search terms in 
 ├── LICENSE              # MIT Open-Source License
 ├── scout.py             # Discovery & Smart Memory script
 ├── librarian.py         # AI Auditor script
-├── logs/                # System memory and rejection reasoning logs
-│   ├── seen_sources.txt
-│   ├── rejected_sources.md
-│   └── triage_log.md
+├── logs/                # System memory and research audit logs
+│   ├── seen_sources.md     # Deduplication memory (Title/Link/Score/Rationale)
+│   └── rejection_audit.md  # Consolidated history of all rejected sources
 ├── .env                 # API Keys & Path Configs
 ├── sources/             # Raw PDF storage for ingestion
 ├── audits/              # Generated Markdown notes
@@ -138,3 +141,6 @@ To use it for a different project, you will need to replace the search terms in 
 If you are cloning this repository to run your own pipeline, please refer to the **[SETUP.md](./SETUP.md)** file for detailed instructions on required dependencies, environment configuration (`.env`), and how to run the components.
 
 After setup, it is highly recommended to read the **[Agent Architecture Diagram](./docs/AGENT_ARCHITECTURE.md)** to understand the logic flow. Then, before running the pipeline at scale, conduct a calibration phase to ensure the AI's logic aligns with your domain. See the **[Calibration Guide](./docs/guides/CALIBRATION_GUIDE.md)** for instructions. If you are adapting this framework for a new domain, reference the **[Custom Domain Guide](./docs/guides/CUSTOM_DOMAIN_GUIDE.md)**.
+
+## 7. Research Cheatsheet (Quick Ref)
+For a concise summary of scoring criteria, resilience flags, and command-line flags, refer to the **[Research Cheatsheet](./docs/RESEARCH_CHEATSHEET.md)**.

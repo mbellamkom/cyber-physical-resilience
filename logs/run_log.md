@@ -509,3 +509,134 @@ INITIATING DATA FLUSH AND IMMEDIATE SHUTDOWN.
 | 🔴 LOW / Rejected | 7 |
 | 🔵 Triage (Bouncer) rejections | 5 |
 | ⚪ Sieve rejections | 12 |
+
+---
+
+## 🚀 Run — 2026-03-02 09:32
+
+[*] --refresh flag detected. Bypassing cache and requesting new queries.
+[!] Local brainstorm failed: name 'TRIAGE_LOG' is not defined
+[!] Falling back to hardcoded Master Queries.
+[=] Executing Pluggable Hybrid Search...
+
+### 🔬 Academic Pass (Google Scholar)
+
+> [!] Thermal sensors unavailable via WMI.
+
+### 📚 Scholar Search
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Scholar Search: "critical infrastructure" AND ("safety over security" OR "life-safety") AND (ICS OR SCADA OR OT) AND cybersecurity
+[*] Processing batch of 1 snippets through Local Bouncer...
+[Hub] Enriched 0/1 items with full text (1 fallback to snippet).
+[!] Bouncer parse failed. Falling back to individual DeepSeek evaluation...
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: ICS/SCADA system security for CPS
+
+### 📚 Scholar Search
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Scholar Search: "break-glass" OR "emergency override" OR "fail-open" AND ("industrial control" OR "operational technology") AND (safety AND security)
+[*] Processing batch of 3 snippets through Local Bouncer...
+[Hub] Enriched 1/3 items with full text (2 fallback to snippet).
+[!] Bouncer parse failed. Falling back to individual DeepSeek evaluation...
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: Protecting industrial control systems from electro
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: An efficient attribute-based access control system
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: Major accidents triggered by malicious manipulatio
+
+### 📚 Scholar Search
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Scholar Search: (NIST OR ISO OR FEMA) AND "dynamic risk" AND ("cyber-physical" OR "resilience") AND ("emergency management" OR "disaster response")
+[*] Processing batch of 3 snippets through Local Bouncer...
+[Hub] Enriched 2/3 items with full text (1 fallback to snippet).
+[!] Bouncer parse failed. Falling back to individual DeepSeek evaluation...
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: Dynamic Risk Assessment for Critical Infrastructur
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: Probabilistic Dynamic Resilience of Critical Infra
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: Hazard-responsive digital twin for climate-driven
+
+### 📰 Grey Literature Pass (DDG + Google)
+
+> [!] Thermal sensors unavailable via WMI.
+
+### 🌐 Web Search (DDG)
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Web Search (DDG): site:nist.gov "NIST 800-82" ("safety over security" OR "ICS cybersecurity guidance")
+[*] Processing batch of 4 snippets through Local Bouncer...
+[Hub] Enriched 0/4 items with full text (4 fallback to snippet).
+[!] Bouncer parse failed. Falling back to individual DeepSeek evaluation...
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: NIST Special Publication (SP) 800-82 Rev. 3, Guide
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: NIST Special Publication (SP) 800-82 (Withdrawn),
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: NIST Special Publication (SP) 800-82 Rev. 2 (Withd
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: NIST Special Publication (SP) 800-82 Rev. 3 (Withd
+
+### 🔎 Web Search (Google)
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Web Search (Google): site:nist.gov "NIST 800-82" ("safety over security" OR "ICS cybersecurity guidance")
+[!] Google Search unavailable: run `pip install googlesearch-python` to enable.
+
+### 🌐 Web Search (DDG)
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Web Search (DDG): site:fema.gov "FEMA Lifelines" ("cyber dependency" OR "resilience planning") "critical infrastructure"
+[*] Processing batch of 4 snippets through Local Bouncer...
+[Hub] Enriched 2/4 items with full text (2 fallback to snippet).
+[!] Bouncer parse failed. Falling back to individual DeepSeek evaluation...
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: 3.2 Critical Infrastructure | FEMA.gov
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: Critical Cyber Asset Identification and Prioritiza
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: Mission Areas and Core Capabilities | FEMA.gov
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: Planning Considerations for Cyber Incidents Guidan
+
+### 🔎 Web Search (Google)
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Web Search (Google): site:fema.gov "FEMA Lifelines" ("cyber dependency" OR "resilience planning") "critical infrastructure"
+[!] Google Search unavailable: run `pip install googlesearch-python` to enable.
+
+### 🌐 Web Search (DDG)
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Web Search (DDG): site:cisa.gov OR site:energy.gov ("OT security" OR "industrial control system safety") "risk management"
+[*] Processing batch of 4 snippets through Local Bouncer...
+[Hub] Enriched 3/4 items with full text (1 fallback to snippet).
+[!] Bouncer parse failed. Falling back to individual DeepSeek evaluation...
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: Industrial Control Systems | Cybersecurity and ...
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: Foundations for OT Cybersecurity: Asset Inventory
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: Foundations for OT Cybersecurity: Asset Inventory
+  [*] Using Local DeepSeek-R1 for Evaluation...
+  -> [Final] 🔴 LOW: ASD’s ACSC, CISA, FBI, NSA, and International Part
+
+### 🔎 Web Search (Google)
+
+> [!] Thermal sensors unavailable via WMI.
+[*] Web Search (Google): site:cisa.gov OR site:energy.gov ("OT security" OR "industrial control system safety") "risk management"
+[!] Google Search unavailable: run `pip install googlesearch-python` to enable.
+
+#### 📊 Session Summary
+
+| Metric | Count |
+| :--- | :--- |
+| Total evaluated | 19 |
+| 🟢🟡 HIGH / MEDIUM | 0 |
+| 🔴 LOW / Rejected | 19 |
+| 🔵 Triage (Bouncer) rejections | 0 |
+| ⚪ Sieve rejections | 19 |

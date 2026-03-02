@@ -18,6 +18,7 @@ Clone this repository to your local machine:
 ```bash
 git clone https://github.com/YOUR_USERNAME/Cyber-Physical-Resilience.git
 cd Cyber-Physical-Resilience
+git checkout dev
 ```
 
 Install the required Python dependencies:
