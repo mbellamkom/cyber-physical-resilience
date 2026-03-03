@@ -32,6 +32,10 @@ Every command capable of altering data, executing scripts, or moving files requi
 ### 3. Anomaly Logging Protocol
 If the AI agent violates the Academic Constraint (e.g., unauthorized writing or hallucinating logic), operations MUST halt. A formal `Operational Anomaly` must be logged in `PROMPT_CHANGELOG.md` detailing the breach, trigger, and corrective action.
 
+**Changelog Workflow Protocol:**
+- **General Logs:** The agent is authorized and expected to write standard changelog entries in its own voice to describe technical updates or script changes.
+- **Researcher's Notes:** When the user provides text starting with 'Researcher's Note:', the agent MUST include the text following that prefix verbatim using the blockquote format: `> **Researcher's Note:** [Text]`.
+
 ### 4. Platform-Agnostic Execution (The Shell Check)
 The AI MUST sense the local shell (e.g., `$PSVersionTable` for PowerShell or `echo $SHELL` for Bash) before sending chained commands. Do not use `&&` in Windows PowerShell; use `;` or execute them sequentially.
 
@@ -77,7 +81,7 @@ All logic changes, framework mappings, and source classification rules used by t
 * 🚩 **[STRUCTURAL_OMISSION]**: Applied to a major framework that exhibits a critical governance gap:
     1. **The Cyber-Blind Spot:** An all-hazards/safety framework for complex environments containing zero acknowledgment of cyber risk.
     2. **The Safety-Blind Spot:** An OT/cyber standard containing zero acknowledgment of physical life-safety consequence.
-* 🚩 **[CLAIR_SILO]**: Applied when a framework remains trapped in traditional industrial levels (Levels 0–4) and fails to acknowledge Primary Infrastructure (Level -1) or Distributed Sovereignty (Level 6/7) as critical failure vectors.
+* 🚩 **[CLAIR_SILO]**: Applied when a framework remains trapped in traditional industrial levels (Levels 0–4) and fails to acknowledge Primary Infrastructure (Level -1) or Distributed Sovereignty (Level 6/7) as critical failure vectors. Refer to the **[CLAIR Framework](https://isc.sans.edu/diaryimages/images/The_CLAIR_Model.pdf)** for hierarchy definitions.
 * 💡 **[EMERGING_THEME]** (Passive/Tagging): Deploy to tag a document proposing a novel intersection of operational risk, technical controls, and human communication. Do not halt execution; simply tag the document and continue processing.
 
 ### 📖 Logic Dictionary (Technical Translation Layer)
@@ -100,7 +104,8 @@ When the AI Discovery Agent evaluates search abstracts and grey literature, it u
 * **HIGH:** Assign a HIGH score in **any** of the following conditions:
     1. **(Positive Baseline):** The document explicitly discusses the tension between safety and security, system overrides, or dynamic risk management in an OT-nexus as its **primary thesis** or **core focus**.
     2. **(Negative Baseline — 🚩 STRUCTURAL_OMISSION):** The document is a major framework, standard, or regulatory instrument that governs OT/ICS or cyber-physical systems **and** is completely silent on human life-safety, emergency egress, or physical consequence. Flag these with 🚩 [STRUCTURAL_OMISSION] and retain as evidence of governance gaps. *Example: A comprehensive ICS cybersecurity standard that specifies access control, patch management, and network segmentation for industrial plants, but never once addresses worker safety, fail-safe states, or emergency shutdown.*
-    3. Any document that maps the temporal dynamics (transient responses) or spatial distribution of cascading failures across the 10-level CLAIR hierarchy.
+    3. Any document that maps the temporal dynamics (transient responses) or spatial distribution of cascading failures across the 10-level **[CLAIR hierarchy](https://isc.sans.edu/diaryimages/images/The_CLAIR_Model.pdf)**.
     4. **Foundational Risk Frameworks:** Documents discussing national/international all-hazards or consequence-driven standards (e.g., ISO, IEC, NIST, NIMS/FEMA).
+    5. **(Consequence-Driven Override):** If a document describes a digital/cyber disruption leading to a kinetic or physical-world consequence (e.g., GPS spoofing resulting in vessel seizure, ransomware causing port closures), it MUST be graded HIGH or MEDIUM, even if written in policy/governance language.
 * **MEDIUM:** The document discusses relevant cyber-physical concepts (e.g., ICS resilience, structural engineering, or emergency workflows) as its primary focus, but only mentions the direct safety vs. security override conflict tangentially or as a secondary point.
-* **LOW:** The document does not discuss complex physical safety, emergency operations, or OT/ICS environments. Explicitly reject standard IT cybersecurity frameworks AND routine occupational safety documents (e.g., OSHA hazard checklists, office ergonomics) with no tie to systemic resilience.
+* **LOW:** The document does not discuss complex physical safety, emergency operations, or OT/ICS environments. Explicitly reject standard IT cybersecurity frameworks (e.g., enterprise data privacy, corporate network defense, phishing, or cloud IT security with zero physical, kinetic, or life-safety nexus) AND routine occupational safety documents (e.g., OSHA hazard checklists, office ergonomics) with no tie to systemic resilience.

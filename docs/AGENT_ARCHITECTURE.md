@@ -12,40 +12,64 @@ flowchart TD
     classDef logic fill:#bfb,stroke:#333,stroke-width:2px,color:#000;
     classDef output fill:#fbb,stroke:#333,stroke-width:2px,color:#000;
     classDef flag fill:#ff9,stroke:#e6b800,stroke-width:2px,color:#000;
+    classDef error fill:#ffcccb,stroke:#a30000,stroke-width:2px,color:#000;
 
-    A[Document DB & Web Search]:::input --> B(Scout Agent):::agent
-    
-    subgraph Discovery[Discovery Phase]
-        B --> C{Grey Lit Override}:::logic
-        C -- "Yes (Dynamic Risk context)" --> D[Process Source]
-        C -- "No" --> E[Reject]
-        D --> F{Relevance Score}:::logic
-        F -- "HIGH / MEDIUM" --> G(Librarian / Auditor Agent):::agent
-        F -- "LOW" --> E
+    A[Web/Academic Search]:::input --> B(Scout Agent):::agent
+
+    subgraph ScoutPipeline[Discovery & 3-Stage Triage]
+        B --> QG[DeepSeek Brainstorm Queries]
+        QG --> S1{Stage 1: Python Sieve}:::logic
+        S1 -- "Keyword Match" --> HUB[Extractor Hub Enrichment]
+        S1 -- "No Match" --> REJ[logs/rejection_audit.md]:::output
+
+        HUB --> S2{Stage 2: Local Bouncer}:::logic
+        S2 -- "Potential HIGH/MEDIUM" --> S3{Stage 3: DeepSeek Confirmation}:::logic
+        S2 -- "LOW (Rationale Provided)" --> REJ
+        S2 -- "Ollama Offline/Error" --> FAIL[Preserve as Unseen]:::error
+
+        S3 -- "Validated HIGH/MEDIUM" --> NOTIF[Discord / Detailed Notification]
+        S3 -- "Validated LOW" --> REJ
     end
 
-    subgraph Evaluation[Evaluation Phase - The Auditor]
-        G --> H{The Dynamic Switch}:::logic
-        
+    subgraph LibrarianPipeline[Technical Auditing]
+        MAN[Manual PDF Sourcing]:::input --> LIB(Librarian / Auditor Agent):::agent
+        LIB --> H{The Dynamic Switch}:::logic
+
         H -->|Tier 1: Manned| I[Human/Soul-First Priority]:::logic
-        H -->|Tier 2: Remote w/ Downstream Risk| J[Balanced Priority]:::logic
+        H -->|Tier 2: Remote| J[Balanced Priority]:::logic
         H -->|Tier 3: Isolated| K[Asset-First Priority]:::logic
-        
+
         I & J & K --> L[Apply Logic Dictionary]:::logic
         L --> M(Extract Conflicts & Mechanisms)
     end
 
-    subgraph OutputPhase[Output & Taxonomy Flags]
-        M --> N[JSON Final Analysis]:::output
+    subgraph FinalLogs[Research Memory]
+        NOTIF & S3 & S2 --> MEM[logs/seen_sources.md]:::output
+        M --> AUD[audits/ Report]:::output
         M -.-> O[🚩 SYSTEMIC OMISSION]:::flag
         M -.-> P[🚩 INHERENT FRICTION]:::flag
-        M -.-> Q[🟡 OUT OF SCOPE]:::flag
         M -.-> R[🚩 PROMPT EVOLUTION TRIGGER]:::flag
     end
 ```
 
+### System Architecture Components
+
+1.  **3-Stage Discovery Triage (Scout)**:
+    *   **Python Sieve**: Lexical filter to reduce compute noise by discarding non-contextual artifacts.
+    *   **Extractor Hub**: Attempts to enrich snippets with full-text content before secondary evaluation.
+    *   **Local Bouncer (Ollama)**: Uses `deepseek-r1:8b` for cost-effective broad screening. Includes "Resilience Failure Mode" where technical errors skip logging to prevent false-negative data poisoning.
+    *   **DeepSeek Confirmation (Ollama)**: Performs final precision scoring (Stage 3) using local inference, replacing the legacy Gemini Cloud dependency.
+
+2.  **PDF Audit Pipeline (Librarian)**:
+    *   **AI Auditor**: Continues to utilize the **Gemini API** (`gemini-2.5-flash`) for multi-modal, high-precision analysis of complex PDF frameworks.
+    *   **Global Resilience Vault**: Embeds audit results into Qdrant using Gemini's `text-embedding-004` model.
+
+3.  **Log Consolidation (The Audit Trail)**:
+    *   **`seen_sources.md`**: The source of truth for all evaluated URLs, preventing duplicates.
+    *   **`rejection_audit.md`**: A unified log of all `LOW` relevance findings, fulfilling the Academic Rigor requirement for negative results.
+
 ### Legend & Flags
 * **SYSTEMIC OMISSION:** A macro framework fails to acknowledge physical safety despite safety being a direct output of its scope.
 * **INHERENT FRICTION:** A necessary security control that intentionally creates tension with life-safety (e.g. locks during a fire).
-* **OUT OF SCOPE:** The document is highly technical and truthfully does not intersect with operational physical safety.
-* **PROMPT EVOLUTION TRIGGER:** This tells the AI that if it encounters *any* edge case, novel risk framework, or linguistic nuance that breaks the rules defined in `PROJECT_RULES.md`, it must flag it. This alerts the human researcher to update the `PROMPT_CHANGELOG.md` and evolve the definitions, preventing the AI from silently forcing data to fit where it doesn't belong.
+* **[CLAIR_SILO]**: Identifies frameworks that fail to acknowledge failure vectors outside traditional SCADA boundaries (Levels -1, 6, 7). [Link to CLAIR Model](https://isc.sans.edu/diaryimages/images/The_CLAIR_Model.pdf)
+* **PROMPT EVOLUTION TRIGGER:** An audit signal that there is a gap in the `PROJECT_RULES.md` and a methodology update is required.
