@@ -640,3 +640,317 @@ INITIATING DATA FLUSH AND IMMEDIATE SHUTDOWN.
 | 🔴 LOW / Rejected | 19 |
 | 🔵 Triage (Bouncer) rejections | 0 |
 | ⚪ Sieve rejections | 19 |
+
+---
+
+## 🚀 Run — 2026-03-02 10:53
+
+
+---
+
+## 🚀 Run — 2026-03-02 10:53
+
+[!] Backfill failed: Storage folder D:/Cyber_Physical_DBs/.qdrant_db is already accessed by another instance of Qdrant client. If you require concurrent access, use Qdrant server instead.
+[*] --recheck mode: re-evaluating past LOW sources with current prompts...
+[Recheck] Scanning seen_sources.md for LOW-scored sources...
+[Recheck] Found 52 LOW sources to re-evaluate.
+[Recheck] Checking: Framework for developing volcanic fragility and vulnerabilit
+[*] --recheck mode: re-evaluating past LOW sources with current prompts...
+[Recheck] Scanning seen_sources.md for LOW-scored sources...
+[Recheck] Found 52 LOW sources to re-evaluate.
+[Recheck] Checking: Framework for developing volcanic fragility and vulnerabilit
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Framework for developing volcanic fragility and vu
+[Recheck] Checking: Risk and Reliability Assessment of Smoke Control Systems in
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Framework for developing volcanic fragility and vu
+[Recheck] Checking: Risk and Reliability Assessment of Smoke Control Systems in
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Risk and Reliability Assessment of Smoke Control S
+[Recheck] Checking: The state of ICS/OT cybersecurity in 2022 and beyond
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Risk and Reliability Assessment of Smoke Control S
+[Recheck] Checking: The state of ICS/OT cybersecurity in 2022 and beyond
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: The state of ICS/OT cybersecurity in 2022 and beyo
+[Recheck] Checking: Development of safety-first engineering models for high-cons
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: The state of ICS/OT cybersecurity in 2022 and beyo
+[Recheck] Checking: Development of safety-first engineering models for high-cons
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Development of safety-first engineering models for
+[Recheck] Checking: Aligning EU Cybersecurity Regulations with ICS Security Stan
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Development of safety-first engineering models for
+[Recheck] Checking: Aligning EU Cybersecurity Regulations with ICS Security Stan
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Aligning EU Cybersecurity Regulations with ICS Sec
+[Recheck] Checking: Cybersecurity capabilities for critical infrastructure resil
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Aligning EU Cybersecurity Regulations with ICS Sec
+[Recheck] Checking: Cybersecurity capabilities for critical infrastructure resil
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Cybersecurity capabilities for critical infrastruc
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Cybersecurity capabilities for critical infrastruc
+[Recheck] Checking: Securing critical infrastructure: Cybersecurity for industri
+[Recheck] Checking: Securing critical infrastructure: Cybersecurity for industri
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Securing critical infrastructure: Cybersecurity fo
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Securing critical infrastructure: Cybersecurity fo
+[Recheck] Checking: Engineering a Cyber-Informed Energy Infrastructure
+[Recheck] Checking: Engineering a Cyber-Informed Energy Infrastructure
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Engineering a Cyber-Informed Energy Infrastructure
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Engineering a Cyber-Informed Energy Infrastructure
+[Recheck] Checking: Cybersecurity in the Energy Sector: Managing OT and IT Risks
+[Recheck] Checking: Cybersecurity in the Energy Sector: Managing OT and IT Risks
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Cybersecurity in the Energy Sector: Managing OT an
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Cybersecurity in the Energy Sector: Managing OT an
+[Recheck] Checking: EPA Guidance on Improving Cybersecurity at Drinking Water an
+[Recheck] Checking: EPA Guidance on Improving Cybersecurity at Drinking Water an
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: EPA Guidance on Improving Cybersecurity at Drinkin
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: EPA Guidance on Improving Cybersecurity at Drinkin
+[Recheck] Checking: SECURITY MEASURES FOR WATER & WASTEWATER UTILITY FACILITIES
+[Recheck] Checking: SECURITY MEASURES FOR WATER & WASTEWATER UTILITY FACILITIES
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: SECURITY MEASURES FOR WATER & WASTEWATER UTILITY F
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: SECURITY MEASURES FOR WATER & WASTEWATER UTILITY F
+[Recheck] Checking: Strategic Cybersecurity for Water Treatment Facilities - ISA
+[Recheck] Checking: Strategic Cybersecurity for Water Treatment Facilities - ISA
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Strategic Cybersecurity for Water Treatment Facili
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Strategic Cybersecurity for Water Treatment Facili
+[Recheck] Checking: DNV: Maritime Safety Trends 2014-2024 | Sea and Job
+[Recheck] Checking: DNV: Maritime Safety Trends 2014-2024 | Sea and Job
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: DNV: Maritime Safety Trends 2014-2024 | Sea and Jo
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: DNV: Maritime Safety Trends 2014-2024 | Sea and Jo
+[Recheck] Checking: UPGRADING MARITIME CYBERSECURITY IN A DANGEROUS WORLD |
+[Recheck] Checking: UPGRADING MARITIME CYBERSECURITY IN A DANGEROUS WORLD |
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: UPGRADING MARITIME CYBERSECURITY IN A DANGEROUS WO
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: UPGRADING MARITIME CYBERSECURITY IN A DANGEROUS WO
+[Recheck] Checking: Infrastructure | Center for International Maritime Security
+[Recheck] Checking: Infrastructure | Center for International Maritime Security
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Infrastructure | Center for International Maritime
+
+#### 📊 Session Summary
+
+| Metric | Count |
+| :--- | :--- |
+| Total evaluated | 0 |
+| 🟢🟡 HIGH / MEDIUM | 0 |
+| 🔴 LOW / Rejected | 0 |
+| 🔵 Triage (Bouncer) rejections | 0 |
+| ⚪ Sieve rejections | 0 |
+
+[Recheck] Checking: Cyber Solutions
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Cyber Solutions
+[Recheck] Checking: Cybersecurity threats, vulnerability and analysis in safety
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Cybersecurity threats, vulnerability and analysis
+[Recheck] Checking: The economics of critical infrastructure controls systems' c
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: The economics of critical infrastructure controls
+[Recheck] Checking: Cybersecurity Risks to Industrial Control Systems in the Age
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Cybersecurity Risks to Industrial Control Systems
+[Recheck] Checking: When the future meets the past: Can safety and cyber securit
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: When the future meets the past: Can safety and cyb
+[Recheck] Checking: Regulating risks within complex sociotechnical systems: Evid
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Regulating risks within complex sociotechnical sys
+[Recheck] Checking: Operational Technology Cybersecurity for Energy Systems | De
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Operational Technology Cybersecurity for Energy Sy
+[Recheck] Checking: Principles of operational technology cybersecurity
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Principles of operational technology cybersecurity
+[Recheck] Checking: A Turning Point for Cyber Physical Resilience - Industrial C
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: A Turning Point for Cyber Physical Resilience - In
+[Recheck] Checking: Industrial Assessment Tools of Risks Associated with Wastewa
+
+#### 📊 Session Summary
+
+| Metric | Count |
+| :--- | :--- |
+| Total evaluated | 0 |
+| 🟢🟡 HIGH / MEDIUM | 0 |
+| 🔴 LOW / Rejected | 0 |
+| 🔵 Triage (Bouncer) rejections | 0 |
+| ⚪ Sieve rejections | 0 |
+
+
+---
+
+## 🚀 Run — 2026-03-02 10:59
+
+[*] --recheck mode: re-evaluating past LOW sources with current prompts...
+[Recheck] Scanning seen_sources.md for LOW-scored sources...
+[Recheck] Found 52 LOW sources to re-evaluate.
+[Recheck] Checking: Framework for developing volcanic fragility and vulnerabilit
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Framework for developing volcanic fragility and vu
+[Recheck] Checking: Risk and Reliability Assessment of Smoke Control Systems in
+[!] Local Bouncer returned error 404: {"error":"model 'deepseek-r1:8b' not found"}
+[Recheck] Confirmed LOW: Risk and Reliability Assessment of Smoke Control S
+[Recheck] Checking: The state of ICS/OT cybersecurity in 2022 and beyond
+
+#### 📊 Session Summary
+
+| Metric | Count |
+| :--- | :--- |
+| Total evaluated | 0 |
+| 🟢🟡 HIGH / MEDIUM | 0 |
+| 🔴 LOW / Rejected | 0 |
+| 🔵 Triage (Bouncer) rejections | 0 |
+| ⚪ Sieve rejections | 0 |
+
+
+---
+
+## 🚀 Run — 2026-03-02 13:22
+
+[+] Backfilled 16 historic entries into 'scout_memory'.
+[*] --recheck mode: re-evaluating past LOW sources with current prompts...
+[Recheck] Scanning seen_sources.md for LOW-scored sources...
+[Recheck] Found 52 LOW sources to re-evaluate.
+[Recheck] Checking: Framework for developing volcanic fragility and vulnerabilit
+[Recheck] Confirmed LOW: Framework for developing volcanic fragility and vu
+[Recheck] Checking: Risk and Reliability Assessment of Smoke Control Systems in
+[Recheck] UPGRADED: 🟢 HIGH: Risk and Reliability Assessment of Smoke Control S
+[Recheck] Checking: The state of ICS/OT cybersecurity in 2022 and beyond
+[Recheck] UPGRADED: 🟡 MEDIUM: The state of ICS/OT cybersecurity in 2022 and beyo
+[Recheck] Checking: Development of safety-first engineering models for high-cons
+[Recheck] UPGRADED: 🟢 HIGH: Development of safety-first engineering models for
+[Recheck] Checking: Aligning EU Cybersecurity Regulations with ICS Security Stan
+[Recheck] Confirmed LOW: Aligning EU Cybersecurity Regulations with ICS Sec
+[Recheck] Checking: Cybersecurity capabilities for critical infrastructure resil
+[!] Local Bouncer parse failed: Expecting ',' delimiter: line 9 column 4 (char 278)
+[Recheck] Confirmed LOW: Cybersecurity capabilities for critical infrastruc
+[Recheck] Checking: Securing critical infrastructure: Cybersecurity for industri
+[Recheck] Confirmed LOW: Securing critical infrastructure: Cybersecurity fo
+[Recheck] Checking: Engineering a Cyber-Informed Energy Infrastructure
+[Recheck] Confirmed LOW: Engineering a Cyber-Informed Energy Infrastructure
+[Recheck] Checking: Cybersecurity in the Energy Sector: Managing OT and IT Risks
+[Recheck] UPGRADED: 🟡 MEDIUM: Cybersecurity in the Energy Sector: Managing OT an
+[Recheck] Checking: EPA Guidance on Improving Cybersecurity at Drinking Water an
+[!] Local Bouncer parse failed: Expecting ',' delimiter: line 9 column 4 (char 329)
+[Recheck] Confirmed LOW: EPA Guidance on Improving Cybersecurity at Drinkin
+[Recheck] Checking: SECURITY MEASURES FOR WATER & WASTEWATER UTILITY FACILITIES
+[!] Local Bouncer parse failed: Expecting ',' delimiter: line 9 column 4 (char 315)
+[Recheck] Confirmed LOW: SECURITY MEASURES FOR WATER & WASTEWATER UTILITY F
+[Recheck] Checking: Strategic Cybersecurity for Water Treatment Facilities - ISA
+[Recheck] UPGRADED: 🟢 HIGH: Strategic Cybersecurity for Water Treatment Facili
+[Recheck] Checking: DNV: Maritime Safety Trends 2014-2024 | Sea and Job
+[Recheck] Confirmed LOW: DNV: Maritime Safety Trends 2014-2024 | Sea and Jo
+[Recheck] Checking: UPGRADING MARITIME CYBERSECURITY IN A DANGEROUS WORLD |
+[Recheck] Confirmed LOW: UPGRADING MARITIME CYBERSECURITY IN A DANGEROUS WO
+[Recheck] Checking: Infrastructure | Center for International Maritime Security
+[Recheck] Confirmed LOW: Infrastructure | Center for International Maritime
+[Recheck] Checking: Cyber Solutions
+[Recheck] Confirmed LOW: Cyber Solutions
+[Recheck] Checking: Cybersecurity threats, vulnerability and analysis in safety
+[Recheck] UPGRADED: 🟢 HIGH: Cybersecurity threats, vulnerability and analysis
+[Recheck] Checking: The economics of critical infrastructure controls systems' c
+[Recheck] Confirmed LOW: The economics of critical infrastructure controls
+[Recheck] Checking: Cybersecurity Risks to Industrial Control Systems in the Age
+[Recheck] Confirmed LOW: Cybersecurity Risks to Industrial Control Systems
+[Recheck] Checking: When the future meets the past: Can safety and cyber securit
+[Recheck] UPGRADED: 🟢 HIGH: When the future meets the past: Can safety and cyb
+[Recheck] Checking: Regulating risks within complex sociotechnical systems: Evid
+[Recheck] UPGRADED: 🟢 HIGH: Regulating risks within complex sociotechnical sys
+[Recheck] Checking: Operational Technology Cybersecurity for Energy Systems | De
+[Recheck] Confirmed LOW: Operational Technology Cybersecurity for Energy Sy
+[Recheck] Checking: Principles of operational technology cybersecurity
+[Recheck] Confirmed LOW: Principles of operational technology cybersecurity
+[Recheck] Checking: A Turning Point for Cyber Physical Resilience - Industrial C
+[Recheck] Confirmed LOW: A Turning Point for Cyber Physical Resilience - In
+[Recheck] Checking: Industrial Assessment Tools of Risks Associated with Wastewa
+[Recheck] Confirmed LOW: Industrial Assessment Tools of Risks Associated wi
+[Recheck] Checking: GAO-06-390, Securing Wastewater Facilities: Utilities Have M
+[Recheck] Confirmed LOW: GAO-06-390, Securing Wastewater Facilities: Utilit
+[Recheck] Checking: ACSC and CISA Launch Critical OT Cybersecurity Guidelines -
+[Recheck] Confirmed LOW: ACSC and CISA Launch Critical OT Cybersecurity Gui
+[Recheck] Checking: #HowTo: Protect Critical Infrastructure from Cyber-Criminals
+[Recheck] Confirmed LOW: #HowTo: Protect Critical Infrastructure from Cyber
+[Recheck] Checking: ACSC and CISA Launch Critical OT Cybersecurity Guidelines
+[Recheck] Confirmed LOW: ACSC and CISA Launch Critical OT Cybersecurity Gui
+[Recheck] Checking: Impacts of Regulations and Compliance for Plant Operators in
+[Recheck] Confirmed LOW: Impacts of Regulations and Compliance for Plant Op
+[Recheck] Checking: Safety - Wikipedia
+[!] Local Bouncer parse failed: Expecting ',' delimiter: line 9 column 4 (char 330)
+[Recheck] Confirmed LOW: Safety - Wikipedia
+[Recheck] Checking: Protecting Critical Maritime Infrastructure : A Multi-Domain
+[Recheck] Confirmed LOW: Protecting Critical Maritime Infrastructure : A Mu
+[Recheck] Checking: (PDF) Unmanned surface vehicles in maritime critical infrast
+[Recheck] Confirmed LOW: (PDF) Unmanned surface vehicles in maritime critic
+[Recheck] Checking: ICS/SCADA system security for CPS
+[!] Local Bouncer parse failed: Expecting ',' delimiter: line 9 column 4 (char 295)
+[Recheck] Confirmed LOW: ICS/SCADA system security for CPS
+[Recheck] Checking: Protecting industrial control systems from electronic threat
+[Recheck] Confirmed LOW: Protecting industrial control systems from electro
+[Recheck] Checking: An efficient attribute-based access control system with brea
+[Recheck] UPGRADED: 🟢 HIGH: An efficient attribute-based access control system
+[Recheck] Checking: Major accidents triggered by malicious manipulations of the
+[Recheck] UPGRADED: 🟢 HIGH: Major accidents triggered by malicious manipulatio
+[Recheck] Checking: Dynamic Risk Assessment for Critical Infrastructures under A
+[!] Local Bouncer parse failed: Expecting ',' delimiter: line 9 column 4 (char 286)
+[Recheck] Confirmed LOW: Dynamic Risk Assessment for Critical Infrastructur
+[Recheck] Checking: Probabilistic Dynamic Resilience of Critical Infrastructure
+[Recheck] UPGRADED: 🟢 HIGH: Probabilistic Dynamic Resilience of Critical Infra
+[Recheck] Checking: Hazard-responsive digital twin for climate-driven urban resi
+[Recheck] Confirmed LOW: Hazard-responsive digital twin for climate-driven
+[Recheck] Checking: NIST Special Publication (SP) 800-82 Rev. 3, Guide to Operat
+[Recheck] UPGRADED: 🟢 HIGH: NIST Special Publication (SP) 800-82 Rev. 3, Guide
+[Recheck] Checking: NIST Special Publication (SP) 800-82 (Withdrawn), Guide to I
+[Recheck] Confirmed LOW: NIST Special Publication (SP) 800-82 (Withdrawn),
+[Recheck] Checking: NIST Special Publication (SP) 800-82 Rev. 2 (Withdrawn), Gui
+[Recheck] UPGRADED: 🟢 HIGH: NIST Special Publication (SP) 800-82 Rev. 2 (Withd
+[Recheck] Checking: NIST Special Publication (SP) 800-82 Rev. 3 (Withdrawn), Gui
+[Recheck] UPGRADED: 🟢 HIGH: NIST Special Publication (SP) 800-82 Rev. 3 (Withd
+[Recheck] Checking: 3.2 Critical Infrastructure | FEMA.gov
+[!] Local Bouncer parse failed: Expecting ',' delimiter: line 9 column 4 (char 339)
+[Recheck] Confirmed LOW: 3.2 Critical Infrastructure | FEMA.gov
+[Recheck] Checking: Critical Cyber Asset Identification and Prioritization Check
+[Recheck] Confirmed LOW: Critical Cyber Asset Identification and Prioritiza
+[Recheck] Checking: Mission Areas and Core Capabilities | FEMA.gov
+[Recheck] Confirmed LOW: Mission Areas and Core Capabilities | FEMA.gov
+[Recheck] Checking: Planning Considerations for Cyber Incidents Guidance for Eme
+[Recheck] UPGRADED: 🟢 HIGH: Planning Considerations for Cyber Incidents Guidan
+[Recheck] Checking: Industrial Control Systems | Cybersecurity and ... - CISA
+[!] Local Bouncer parse failed: Expecting ',' delimiter: line 9 column 4 (char 303)
+[Recheck] Confirmed LOW: Industrial Control Systems | Cybersecurity and ...
+[Recheck] Checking: Foundations for OT Cybersecurity: Asset Inventory Guidance .
+[Recheck] Confirmed LOW: Foundations for OT Cybersecurity: Asset Inventory
+[Recheck] Checking: Foundations for OT Cybersecurity: Asset Inventory Guidance .
+[Recheck] Confirmed LOW: Foundations for OT Cybersecurity: Asset Inventory
+[Recheck] Checking: ASD’s ACSC, CISA, FBI, NSA, and International Partners ...
+[!] Local Bouncer parse failed: Expecting ',' delimiter: line 9 column 4 (char 299)
+[Recheck] Confirmed LOW: ASD’s ACSC, CISA, FBI, NSA, and International Part
+[*] Recheck complete. Run 'python scout.py' for a normal search pass.
+
+#### 📊 Session Summary
+
+| Metric | Count |
+| :--- | :--- |
+| Total evaluated | 0 |
+| 🟢🟡 HIGH / MEDIUM | 0 |
+| 🔴 LOW / Rejected | 0 |
+| 🔵 Triage (Bouncer) rejections | 0 |
+| ⚪ Sieve rejections | 0 |

@@ -23,7 +23,7 @@ flowchart TD
         S1 -- "No Match" --> REJ[logs/rejection_audit.md]:::output
 
         HUB --> S2{Stage 2: Local Bouncer}:::logic
-        S2 -- "Potential HIGH/MEDIUM" --> S3{Stage 3: Cloud Specialist}:::logic
+        S2 -- "Potential HIGH/MEDIUM" --> S3{Stage 3: DeepSeek Confirmation}:::logic
         S2 -- "LOW (Rationale Provided)" --> REJ
         S2 -- "Ollama Offline/Error" --> FAIL[Preserve as Unseen]:::error
 
@@ -54,13 +54,17 @@ flowchart TD
 
 ### System Architecture Components
 
-1.  **3-Stage Discovery Triage**:
-    *   **Python Sieve**: Lexical filter to reduce API costs by discarding non-contextual noise.
+1.  **3-Stage Discovery Triage (Scout)**:
+    *   **Python Sieve**: Lexical filter to reduce compute noise by discarding non-contextual artifacts.
     *   **Extractor Hub**: Attempts to enrich snippets with full-text content before secondary evaluation.
     *   **Local Bouncer (Ollama)**: Uses `deepseek-r1:8b` for cost-effective broad screening. Includes "Resilience Failure Mode" where technical errors skip logging to prevent false-negative data poisoning.
-    *   **Cloud Specialist (Gemini)**: Performs final precision scoring and detailed researcher notification.
+    *   **DeepSeek Confirmation (Ollama)**: Performs final precision scoring (Stage 3) using local inference, replacing the legacy Gemini Cloud dependency.
 
-2.  **Log Consolidation (The Audit Trail)**:
+2.  **PDF Audit Pipeline (Librarian)**:
+    *   **AI Auditor**: Continues to utilize the **Gemini API** (`gemini-2.5-flash`) for multi-modal, high-precision analysis of complex PDF frameworks.
+    *   **Global Resilience Vault**: Embeds audit results into Qdrant using Gemini's `text-embedding-004` model.
+
+3.  **Log Consolidation (The Audit Trail)**:
     *   **`seen_sources.md`**: The source of truth for all evaluated URLs, preventing duplicates.
     *   **`rejection_audit.md`**: A unified log of all `LOW` relevance findings, fulfilling the Academic Rigor requirement for negative results.
 
