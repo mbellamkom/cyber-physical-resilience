@@ -40,7 +40,7 @@ To evaluate how different global frameworks (like NIST, ISO, and FEMA) handle th
 * **Tier 3: Isolated/Unmanned Sites:** In completely isolated environments with no immediate or downstream human risk (e.g., deep-space probes), the rule is **Asset-First**, prioritizing strict mission continuity and hardware integrity above all else (e.g., bricking a system to protect data).
 
 ### Tech Stack & Models
-* **AI Models:** Google Gemini (via `google-genai` API) for both discovery reasoning and technical extraction.
+* **AI Models:** Local DeepSeek (`deepseek-r1` via Ollama) for discovery/triage reasoning and Google Gemini (via `google-genai` API) for technical extraction.
 * **Vector Database:** Qdrant (`qdrant-client`) for local, disk-persistent document embeddings and memory.
 * **Search Tools:** `scholarly` for Google Scholar academic papers, and `ddgs` for general web/grey literature.
 * **Notifications:** Discord Webhooks for real-time human-in-the-loop review alerts.
@@ -55,10 +55,11 @@ Reading hundreds of technical frameworks, academic papers, incident reports, and
 
 The workflow is broken into three steps:
 
-* **Step 1: Discovery (`scout.py`)** A **Tiered Triage AI Pipeline**. Instead of passively scraping, it uses Gemini to dynamically brainstorm optimized search queries. It then casts a wide net via **Google Scholar** and **DuckDuckGo** and processes snippets through a 3-stage, zero-cost scaling architecture:
-    1. **The Python Sieve:** Instantly discards snippets lacking foundational project keywords via lexical analysis (zero API cost).
-    2. **The Local Bouncer:** Batches surviving snippets into a local `deepseek-r1` instance (via Ollama) to broadly catch safety/security edge cases and SILENT_ANOMALY IT-documents.
-    3. **The Cloud Specialist:** Only the highest-signal snippets are finally passed to `gemini-2.5-flash` for rigorous `PROJECT_RULES.md` scoring and Discord dispatch.
+* **Step 1: Discovery (`scout.py`)** A **Tiered Triage AI Pipeline**. Instead of passively scraping, it uses DeepSeek to dynamically brainstorm optimized search queries. It then casts a wide net via **Google Scholar** and **DuckDuckGo** and processes snippets through a 3-stage, zero-cost offline scaling architecture:
+    1. **The Python Sieve:** Instantly discards snippets lacking foundational project keywords via lexical analysis.
+    2. **The Local Bouncer:** Batches surviving snippets into a local `deepseek-r1` instance (via Ollama) to broadly filter irrelevant IT-documents and catch broad safety/security edge cases.
+    3. **The Local Specialist:** Only the highest-signal snippets are finally passed to DeepSeek for rigorous `PROJECT_RULES.md` scoring and Discord dispatch, completely replacing the former cloud API dependency.
+    * **Re-Evaluation (`--recheck`):** This local-inference architecture allows the AI to re-audit the entire `seen_sources.md` dataset against updated methodologies instantaneously, without incurring any API costs.
   > ![Scout Discord Output](./screenshots/scout_discord_with_agent_reasoning.png)
   >
   > **🏛️ Architecture Note (Decoupled Pipeline):**
@@ -81,10 +82,14 @@ I didn't want the AI to summarize or draw conclusions for me. I want to do the a
 This file acts as the AI's logic board:
 * **Priority Logic:** Enforces the 3-tier Dynamic Switch (Human/Soul-First vs. Asset-First) mentioned above.
 * **Technical Translation Dictionary:** Equips the AI to translate jargon across industries. For example, if a cybersecurity paper mentions "Privilege Escalation," the AI tags it as a physical "Break-Glass" mechanism. It also translates organizational terms like "Personnel" into universal safety terms like "All-Souls-on-Site."
-* **Conflict Categorization:** Classifies tension between security and safety into three distinct flags:
+* **Conflict Categorization:** Classifies tension between security and safety into a suite of flags:
   * 🚩 **[INHERENT_FRICTION]:** Expected operational trade-offs (e.g., secure locks blocking rapid egress).
-  * 🚩 **[SYSTEMIC_OMISSION]:** Crucial safety omissions in an OT context (the "Silent Document").
+  * 🚩 **[STRUCTURAL_OMISSION]:** A major framework exhibiting a critical governance gap (e.g., a cyber standard ignoring physical safety, or a safety standard ignoring cyber risk).
   * 🟡 **[OUT_OF_SCOPE_SILENCE]:** Documents where safety is genuinely outside their technical purview.
+  * 🚩 **[REGULATORY_BARRIER]:** Legal/compliance barriers to "flexible" overrides.
+  * 🔍 **[SPOOF_VULNERABILITY]:** Sensors vulnerable to cyber-spoofing to force a "fail-open" state.
+  * 🔄 **[INCIDENT_FEEDBACK_LOOP]:** Requirements for the system to evolve its "DNA" based on "break-glass" events.
+  * 💡 **[EMERGING_THEME]**: A novel intersection of operational risk, technical controls, and human communication.
 * **The Evolution Directive:** Instructs the AI to be iterative and act as a global "bug bounty." If the AI reads a paper that introduces a completely novel concept (e.g., an unprecedented architectural framework or international protocol not currently in the Logic Dictionary), it must flag a suggested rule update. Crucially, this directive is flexible enough to catch *any* unanticipated edge-case, including formatting glitches, broken PDF OCR, missing page numbers, or script logic failures—ensuring the human researcher can patch the pipeline based on the AI's feedback.
 
 ### B. The Auditor Persona (`auditor.md`)
@@ -93,11 +98,12 @@ This file dictates *how* the AI reads the text and formats its notes:
 * **The Persona & Kill Switch:** The AI acts exclusively as a "Senior Cyber-Physical Resilience Auditor." The tension between Human Life-Safety (emergency egress, environmental containment) and Asset Security (CIA triad, system uptime) is the core of this audit.
   * **The Kill Switch ("IT-Centric Check"):** It is instructed to immediately stop reading and skip any document that is 100% focused on information security (data loss) with zero physical consequences.
   * **The Rationale:** Many IT-centric frameworks are "Silent" on safety. Without this scope gate, the pipeline would be cluttered with irrelevant audits or false-positive conflicts where standard IT security practices (like locking a server rack) are flagged as "safety violations" simply because they restrict access. This ensures we only ingest data with a true operational technology (OT) nexus.
+* **Scout Scoring Shift:** The discovery pipeline uses a strict gradient to determine document relevance. It actively down-ranks generic IT-centric security standards while placing high value on documents that describe cascading failures or consequence-driven physical overrides across the 10 tiers of the CLAIR framework.
 * **70% Parity Mapping:** When comparing different global frameworks, the AI is forbidden from using simple keyword matching. A mapping is only valid if it meets 3 out of 4 functional criteria: *Target* (same asset), *Intent* (same goal), *Hazard* (same consequence), and *Phase* (same timeline).
 * **FEMA Lifeline Translation:** To bridge the gap between digital and physical impacts, the AI maps any extracted cyber failures directly to FEMA's 7 Community Lifelines (e.g., mapping a "network outage" directly to the physical "Energy" impact). These lifelines are mapped to ISO critical sectors to account for international frameworks and terminology.
 * **[CLAIR_SILO]**: Identifies frameworks that fail to acknowledge failure vectors outside traditional SCADA boundaries (e.g., Level -1 Primary Infrastructure or Level 6/7 Cloud Services). See the **[CLAIR Model](https://isc.sans.edu/diaryimages/images/The_CLAIR_Model.pdf)** for more details.
-* **Logical Dependency**: Operational state changes driven by external mandates, policy, or regulations.
-* **Geographic Dependency**: Shared physical location risks, such as shared utility trenches.
+* **Logical Dependency**: Operational state changes driven by external mandates, policy, or regulations (e.g., utility load-shedding or mandatory safety protocols).
+* **Geographic Dependency**: Shared physical location risks, such as power and fiber sharing a common utility trench.
 
 ### C. The Transparency Log ([.agent/PROMPT_CHANGELOG.md](./.agent/PROMPT_CHANGELOG.md))
 To ensure complete academic transparency, any adjustments made to the AI's logic, output constraints, or project rules are formally documented in the [.agent/PROMPT_CHANGELOG.md](./.agent/PROMPT_CHANGELOG.md) file. This prevents "shadow modifications" of the research methodology and guarantees that the AI's operating parameters remain auditable from the project's inception.
