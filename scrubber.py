@@ -27,6 +27,9 @@ SUSPICIOUS_PATTERNS = [
     r"<\s*/?system\s*>",   # XML/tag-based injection attempts
 ]
 
+# Pre-compile patterns for efficiency
+COMPILED_PATTERNS = [re.compile(p) for p in SUSPICIOUS_PATTERNS]
+
 def setup_directories():
     for directory in [WATCH_DIR, CLEAN_DIR, QUARANTINE_DIR]:
         Path(directory).mkdir(parents=True, exist_ok=True)
@@ -54,9 +57,9 @@ def scan_file(filepath):
         return False, "unsupported_format_or_corrupted"
 
     content = normalize_text(raw_content)
-    for pattern in SUSPICIOUS_PATTERNS:
-        if re.search(pattern, content):
-            return False, pattern
+    for pattern in COMPILED_PATTERNS:
+        if pattern.search(content):
+            return False, pattern.pattern
     return True, None
 
 def wait_for_file_stable(filepath, timeout=30, interval=0.5):
