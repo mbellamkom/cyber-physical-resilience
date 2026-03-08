@@ -13,12 +13,17 @@ import json
 import logging
 import os
 import socket
+import asyncio
+from concurrent.futures import ProcessPoolExecutor
+from contextlib import asynccontextmanager
+from functools import partial
+import warnings
 from datetime import datetime
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
-import requests
+import httpx
 import trafilatura
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Request, Security
@@ -27,6 +32,9 @@ from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from sanitizer_utils import scan_text
+
+warnings.filterwarnings("ignore", message="Unverified HTTPS request")
 
 # ---------------------------------------------------------------------------
 # Paths (match volume mounts in docker-compose.extractor.yml)
@@ -79,17 +87,37 @@ def save_lifetime_stats(stats: dict) -> None:
 lifetime_stats = load_lifetime_stats()
 session_stats  = {"extractions_completed": 0}
 
+NUM_WORKERS = int(os.getenv("NUM_EXTRACTOR_WORKERS", "2"))
+
+executor = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global executor
+    logger.info("Extractor Hub starting up...")
+    logger.info(
+        "Config: NUM_EXTRACTOR_WORKERS=%s, EXTRACTOR_GPU=%s",
+        NUM_WORKERS,
+        os.getenv("EXTRACTOR_GPU", "cpu"),
+    )
+    logger.info("Log dir:   %s", LOG_DIR)
+    logger.info("Stats dir: %s", STATS_DIR)
+    executor = ProcessPoolExecutor(max_workers=NUM_WORKERS)
+    logger.info("Startup complete.")
+    yield
+    if executor:
+        executor.shutdown(wait=True)
+        logger.info("Extractor Hub shutting down...")
+
 # ---------------------------------------------------------------------------
 # App
 # ---------------------------------------------------------------------------
-app = FastAPI(title="Extractor Hub", version="1.0.0")
+app = FastAPI(title="Extractor Hub", version="1.0.0", lifespan=lifespan)
 
 # V-08: Rate Limiter
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-NUM_WORKERS = int(os.getenv("NUM_EXTRACTOR_WORKERS", "2"))
 
 # ---------------------------------------------------------------------------
 # Auth (V-02)
@@ -120,19 +148,8 @@ class ExtractResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Startup
+# Old Startup Handled via Lifespan
 # ---------------------------------------------------------------------------
-@app.on_event("startup")
-async def on_startup() -> None:
-    logger.info("Extractor Hub starting up...")
-    logger.info(
-        "Config: NUM_EXTRACTOR_WORKERS=%s, EXTRACTOR_GPU=%s",
-        NUM_WORKERS,
-        os.getenv("EXTRACTOR_GPU", "cpu"),
-    )
-    logger.info("Log dir:   %s", LOG_DIR)
-    logger.info("Stats dir: %s", STATS_DIR)
-    logger.info("Startup complete.")
 
 
 # ---------------------------------------------------------------------------
@@ -146,49 +163,12 @@ async def health():
 
 @app.get("/stats", dependencies=[Depends(verify_api_key)])
 async def stats():
-    """Return session and lifetime extraction counts, merge for response."""
-    # V-13: Refactor to prevent race condition/double-counting on file writes
-    current_lifetime = load_lifetime_stats()["extractions_completed"]
-    merged_total = current_lifetime + session_stats["extractions_completed"]
-
+    """Return session and lifetime extraction counts."""
     return {
         "session": {"extractions_completed": session_stats["extractions_completed"]},
-        "lifetime": {"extractions_completed": merged_total},
+        "lifetime": {"extractions_completed": lifetime_stats["extractions_completed"]},
         "num_extractor_workers": NUM_WORKERS,
     }
-
-
-def is_safe_url(url: str) -> bool:
-    """
-    Validates that a URL uses HTTP/HTTPS and resolves to a public IP address.
-    Blocks localhost, private network ranges, and reserved/multicast IPs.
-    """
-    try:
-        parsed = urlparse(url)
-        if parsed.scheme not in ("http", "https"):
-            return False
-
-        hostname = parsed.hostname
-        if not hostname:
-            return False
-
-        # Resolve hostname to IP
-        ip_addr = socket.gethostbyname(hostname)
-        ip_obj = ipaddress.ip_address(ip_addr)
-
-        # Block internal/private ranges
-        if (
-            ip_obj.is_private
-            or ip_obj.is_loopback
-            or ip_obj.is_reserved
-            or ip_obj.is_link_local
-            or ip_obj.is_multicast
-        ):
-            return False
-
-        return True
-    except Exception:
-        return False
 
 
 @app.post("/extract", response_model=ExtractResponse, dependencies=[Depends(verify_api_key)])
@@ -233,28 +213,37 @@ async def extract(request: Request, body: ExtractRequest):
     logger.info("Extracting (Pinned IP %s): %s", ip_addr, uri)
 
     try:
-        # Use requests for the pinned fetch to ensure we hit the IP we validated.
-        # verify=False is used specifically here because hit-by-IP triggers SNI/SSL mismatches.
-        # Since we already validated the IP against a blocklist, this is a bounded trade-off.
-        resp = requests.get(pinned_uri, headers=headers, timeout=15, verify=False)
-        resp.raise_for_status()
+        async with httpx.AsyncClient(verify=False) as client:
+            resp = await client.get(pinned_uri, headers=headers, timeout=15.0)
+            resp.raise_for_status()
 
-        # Pass the downloaded raw content to trafilatura for extraction
-        markdown = trafilatura.extract(
+        loop = asyncio.get_running_loop()
+        extract_partial = partial(
+            trafilatura.extract,
             resp.text,
             output_format="markdown",
             include_tables=True,
             include_links=True,
             favor_recall=True,
         )
+        markdown = await loop.run_in_executor(executor, extract_partial)
 
         if not markdown:
             logger.warning("No extractable content at: %s", uri)
             raise HTTPException(status_code=500, detail="No content extracted")
 
+        is_safe, trigger = await loop.run_in_executor(executor, scan_text, markdown)
+        if not is_safe:
+            logger.warning("Quarantine event: Content from %s blocked by security airlock (Trigger: %s)", uri, trigger)
+            raise HTTPException(status_code=403, detail="Content blocked by security airlock.")
+
         session_stats["extractions_completed"] += 1
+        lifetime_stats["extractions_completed"] += 1
+        save_lifetime_stats(lifetime_stats)
         return ExtractResponse(markdown=markdown, uri=uri)
 
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception("Extraction failed for %s: %s", uri, exc)
         raise HTTPException(status_code=500, detail="Extraction failed")
