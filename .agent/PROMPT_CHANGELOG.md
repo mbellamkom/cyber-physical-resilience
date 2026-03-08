@@ -4,6 +4,23 @@ This document tracks changes made to the AI agent prompts, rules, and logic file
 
 **Academic Rigor Constraint:** All logic changes, prompt updates, and rule modifications recorded in this document are derived directly from the human researcher. The initial logic and source classification rules were developed during a preliminary research planning session between the researcher and the web-based version of Google Gemini. The Google Antigravity AI agent implemented those derived rules into this repository to ensure methodological transparency.
 
+## [2026-03-08] — Skill Upgrade: Precision Evidence Indexing & Explanation Drift Mitigation
+**Files Modified:** `.agent/skills/auditor.md`
+**Change Type:** Output Constraint & Logic Hardening
+**Authorization:** Researcher-approved via explicit `APPROVED` keyword per Directive 1 (Zero-Implicit Trust).
+
+**Reasoning:**
+The previous iteration of the Librarian/Auditor skill allowed the LLM to generate narrative summaries and probabilistic "Yes/No" mappings based on framework intent. This introduced significant risks of "Explanation Drift" and hallucinated matches, wherein the AI could synthesize new cyber-physical linkages rather than accurately reflecting silence in the source document. To preserve academic rigor, the skill was transitioned from a general summarizer into a precision-based Evidence Indexer.
+
+**Modifications:**
+* **Kinetic Downstream Check:** Replaced the generic IT-centric exit logic with a strict Downstream Kinetic Check instructing the AI to exit only if there are no physical actuators, geographic zones, or biological lifeforms influenced by the system.
+* **Primary Evidence Index:** Overhauled Output Instructions to enforce a strict table format demanding exact location data (Section + Paragraph + PDF Page) and verbatim evidence snippets.
+* **Anti-Hallucination Guardrail (NULL VALUE RULE):** Formalized a strict instruction to use `[OMITTED]` for absent data, forbidding the AI from inferring or extrapolating missing mechanisms.
+* **Evidence-Based Parity Mapping:** Required a table replacing "Yes/No" answers with extracted proof keywords demonstrating matches for Target, Intent, Hazard, and Phase.
+* **Research Utility section:** Demanded the generation of thesis use cases and downstream NotebookLM investigation queries to deepen operational risk analysis.
+
+---
+
 ## [2026-03-02] — Reliability Upgrade & Documentation Consolidation
 **Files Modified:** `scout.py`, `docs/RESEARCH_CHEATSHEET.md`, `docs/AGENT_ARCHITECTURE.md`, `README.md`, `CONTRIBUTING.md`, `SETUP.md`, `.agent/rules/PROJECT_RULES.md`
 **Change Type:** Technical Debt, Research Integrity & Documentation
