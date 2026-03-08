@@ -1,51 +1,52 @@
-import os
 import shutil
 import time
-import re
+import uuid
 from pathlib import Path
+from concurrent.futures import ProcessPoolExecutor
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from pypdf import PdfReader
+import fitz
+from sanitizer_utils import scan_text
 
 # Configuration - D: Drive Storage Volume
-WATCH_DIR = r"D:\Cyber_Physical_DBs\Research_Downloads"
-CLEAN_DIR = r"D:\Cyber_Physical_DBs\sources"
-QUARANTINE_DIR = r"D:\Cyber_Physical_DBs\Quarantine"
+WATCH_DIR = Path(r"D:\Cyber_Physical_DBs\Research_Downloads")
+CLEAN_DIR = Path(r"D:\Cyber_Physical_DBs\sources")
+QUARANTINE_DIR = Path(r"D:\Cyber_Physical_DBs\Quarantine")
+
+MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024
 
 # V-07: Restricted allowlist
 ALLOWED_EXTENSIONS = {'.pdf'}
 
-# V-05: Robust regex patterns for normalization
-SUSPICIOUS_PATTERNS = [
-    r"ignore\s+(all\s+)?previous\s+instructions?",
-    r"system\s+prompt",
-    r"you\s+are\s+(now\s+)?(no\s+longer|an?\s+)(ai|assistant|large language model)",
-    r"developer\s+mode",
-    r"bypass\s+(all\s+)?restrictions?",
-    r"disregard\s+(all\s+)?previous",
-    r"new\s+instructions?\s*:",
-    r"<\s*/?system\s*>",   # XML/tag-based injection attempts
-]
-
-# Pre-compile patterns for efficiency
-COMPILED_PATTERNS = [re.compile(p) for p in SUSPICIOUS_PATTERNS]
+executor = ProcessPoolExecutor(max_workers=4)
 
 def setup_directories():
     for directory in [WATCH_DIR, CLEAN_DIR, QUARANTINE_DIR]:
-        Path(directory).mkdir(parents=True, exist_ok=True)
+        directory.mkdir(parents=True, exist_ok=True)
 
-def normalize_text(text):
-    """V-05: Standardize whitespace and casing for reliable scanning."""
-    if not text: return ""
-    return re.sub(r'\s+', ' ', text.lower()).strip()
+def safe_move(src_path, dest_dir, prefix=""):
+    src_path = Path(src_path)
+    dest_dir = Path(dest_dir)
+    try:
+        suffix = uuid.uuid4().hex[:8]
+        new_name = f"{prefix}{src_path.stem}_{suffix}{src_path.suffix}"
+        dest_path = dest_dir / new_name
+        shutil.move(str(src_path), str(dest_path))
+        return True
+    except Exception as e:
+        print(f"Move failed: {e}")
+        return False
 
 def extract_text(filepath):
-    ext = Path(filepath).suffix.lower()
+    path = Path(filepath)
+    if path.stat().st_size > MAX_FILE_SIZE_BYTES:
+        return None
+    ext = path.suffix.lower()
     if ext == '.pdf':
         try:
-            reader = PdfReader(filepath)
-            text = "".join([page.extract_text() or "" for page in reader.pages])
-            return text
+            with fitz.open(path) as doc:
+                text = "".join(page.get_text() for page in doc)
+                return text
         except Exception as e:
             print(f"Error parsing PDF: {e}")
             return None
@@ -56,72 +57,84 @@ def scan_file(filepath):
     if raw_content is None:
         return False, "unsupported_format_or_corrupted"
 
-    content = normalize_text(raw_content)
-    for pattern in COMPILED_PATTERNS:
-        if pattern.search(content):
-            return False, pattern.pattern
-    return True, None
+    return scan_text(raw_content)
 
 def wait_for_file_stable(filepath, timeout=30, interval=0.5):
     """V-06: Poll for file size stability before processing."""
+    path = Path(filepath)
     last_size = -1
     elapsed = 0
     while elapsed < timeout:
         try:
-            current_size = os.path.getsize(filepath)
+            current_size = path.stat().st_size
         except FileNotFoundError:
             return False
         if current_size == last_size and current_size > 0:
-            return True
+            try:
+                path.rename(path)
+                return True
+            except PermissionError:
+                pass
         last_size = current_size
         time.sleep(interval)
         elapsed += interval
     return False
 
 def process_file(file_path):
-    filename = os.path.basename(file_path)
-    if filename.startswith('.') or filename.endswith('.crdownload'):
-        return
+    try:
+        path = Path(file_path)
+        filename = path.name
+        if filename.startswith('.') or filename.endswith('.crdownload') or filename.endswith('.tmp'):
+            return
 
-    # V-07: Immediate extension check
-    ext = Path(file_path).suffix.lower()
-    if ext not in ALLOWED_EXTENSIONS:
-        print(f"[!] Blocking non-PDF file: {filename}")
-        shutil.move(file_path, os.path.join(QUARANTINE_DIR, filename))
-        return
+        # V-07: Immediate extension check
+        ext = path.suffix.lower()
+        if ext not in ALLOWED_EXTENSIONS:
+            print(f"[!] Blocking non-PDF file: {filename}")
+            safe_move(path, QUARANTINE_DIR)
+            return
 
-    # V-06: Wait for download/write to finish
-    if not wait_for_file_stable(file_path):
-        print(f"[!] File timeout/instability: {filename}")
-        return
+        # V-06: Wait for download/write to finish
+        if not wait_for_file_stable(path):
+            print(f"[!] File timeout/instability: {filename}")
+            return
 
-    is_safe, trigger = scan_file(file_path)
+        is_safe, trigger = scan_file(path)
 
-    if is_safe:
-        print(f"[✔] Clean: {filename}")
-        shutil.move(file_path, os.path.join(CLEAN_DIR, filename))
-    else:
-        print(f"[!] QUARANTINE: {filename} (Trigger: {trigger})")
-        shutil.move(file_path, os.path.join(QUARANTINE_DIR, filename))
+        if is_safe:
+            print(f"[✔] Clean: {filename}")
+            safe_move(path, CLEAN_DIR)
+        else:
+            print(f"[!] QUARANTINE: {filename} (Trigger: {trigger})")
+            safe_move(path, QUARANTINE_DIR)
+    except Exception as e:
+        print(f"Error processing {file_path}: {e}")
 
 class DownloadHandler(FileSystemEventHandler):
-    def on_created(self, event):
+    def _handle(self, event):
         if not event.is_directory:
-            process_file(event.src_path)
-    def on_moved(self, event):
-        if not event.is_directory:
-            process_file(event.dest_path)
+            path = getattr(event, 'dest_path', event.src_path)
+            executor.submit(process_file, path)
+
+    on_created = on_moved = _handle
+
+def process_existing_files():
+    for child in WATCH_DIR.iterdir():
+        if child.is_file():
+            executor.submit(process_file, child)
 
 if __name__ == "__main__":
     setup_directories()
+    process_existing_files()
     print(f"[*] Scrubber ACTIVE. Watching {WATCH_DIR}...")
     event_handler = DownloadHandler()
     observer = Observer()
-    observer.schedule(event_handler, WATCH_DIR, recursive=False)
+    observer.schedule(event_handler, str(WATCH_DIR), recursive=False)
     observer.start()
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
         observer.stop()
+        executor.shutdown(wait=True)
     observer.join()
